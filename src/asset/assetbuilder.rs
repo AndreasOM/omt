@@ -87,7 +87,7 @@ impl AssetBuilder{
 
 
 	fn tool_asset(
-		asset_builder: &AssetBuilder,
+		&self,
 		tool_run: &ToolRun,
 	)
 	-> Result<u32,&'static str> {
@@ -105,7 +105,7 @@ impl AssetBuilder{
 			},
 			"copy" => {
 				let source = tool_run.input[0].clone();
-				let dest = format!("{}/{}", asset_builder.data_directory, tool_run.output );
+				let dest = format!("{}/{}", self.data_directory, tool_run.output );
 				match fs::copy( &source, &dest ) {
 					Ok( bytes ) => {
 						println!("📁 🔧 ✅ Copied {:?} bytes from {:?} to {:?}", bytes, &source, &dest);
@@ -126,6 +126,7 @@ impl AssetBuilder{
 	}
 
 	fn tool_call_external(
+		&self,
 		tool_run: &ToolRun,
 	)
 	-> Result<u32,&'static str> {
@@ -176,7 +177,7 @@ impl AssetBuilder{
 
 
 	pub fn build (
-		asset_builder: &AssetBuilder,
+		&self,
 	)
 	-> Result<u32,&'static str> {
 
@@ -184,7 +185,7 @@ impl AssetBuilder{
 
 		// find all asset_config.yaml
 		let mut config_files = Vec::new();
-		let config_glob = format!( "{}/**/*.asset_config.yaml", asset_builder.content_directory );
+		let config_glob = format!( "{}/**/*.asset_config.yaml", self.content_directory );
 		for config_file in glob( &config_glob ).expect("Failed glob pattern") {
 			match config_file {
 				Err(e) => return Err( "Error finding config" ),
@@ -284,7 +285,7 @@ impl AssetBuilder{
 					"noop"		=> println!("NOOP -> Do nothing"),
 					"$asset"	=> {
 						println!("$asset command found");
-						match AssetBuilder::tool_asset( &asset_builder, &tool_run ) {
+						match self.tool_asset( &tool_run ) {
 							Ok( n ) => {
 								number_of_assets_updated += n;
 							},
@@ -294,7 +295,7 @@ impl AssetBuilder{
 						}
 					}
 					tool		=> {
-						match AssetBuilder::tool_call_external( &tool_run ) {
+						match self.tool_call_external( &tool_run ) {
 							Ok( n ) => {
 								number_of_assets_updated += n;
 							},
