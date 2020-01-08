@@ -1,7 +1,6 @@
 use clap::{Arg, App, SubCommand};
 use std::process;
-// :TODO: figure out rust conventions for module structure
-//use atlas::atlas::Atlas;
+
 use omt::atlas::Atlas;
 use omt::util::OmError;
 
