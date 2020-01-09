@@ -7,13 +7,13 @@ use std::io::{BufReader, Read, Write};
 use std::path::Path;
 
 #[derive(Clone)]
-struct Entry{
+pub struct Entry{
 	filename:	String,
-	image:		Option<DynamicImage>,
-	x:			u32,
-	y:			u32,
-	width:		u32,
-	height:		u32,
+	pub image:		Option<DynamicImage>,
+	pub x:			u32,
+	pub y:			u32,
+	pub width:		u32,
+	pub height:		u32,
 }
 
 impl std::fmt::Debug for Entry {
@@ -151,8 +151,8 @@ impl Row {
 pub struct Atlas {
 	size: u32,
 	border: u32,
-	entries: Vec<Entry>,
-	image: Option<DynamicImage>,
+	pub entries: Vec<Entry>,
+	pub image: Option<DynamicImage>,
 	rows: Vec<Row>,
 	used_height: u32,
 	atlas_filename: Option<String>,
