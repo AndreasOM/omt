@@ -6,7 +6,7 @@ use omt::util::OmError;
 
 fn main() {
 	let matches = App::new("omt-packer")
-					.version("0.2")
+					.version("0.3")
 					.author("Andreas N. <andreas@omni-mad.com>")
 					.about("Packs data into archive, or unpacks data from archive")
 					.subcommand(SubCommand::with_name("pack")
