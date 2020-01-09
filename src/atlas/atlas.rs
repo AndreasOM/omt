@@ -155,6 +155,8 @@ pub struct Atlas {
 	image: Option<DynamicImage>,
 	rows: Vec<Row>,
 	used_height: u32,
+	atlas_filename: Option<String>,
+	image_filename: Option<String>,
 }
 
 impl std::fmt::Debug for Atlas {
@@ -177,6 +179,8 @@ impl Atlas {
 			image: Some( image::DynamicImage::new_rgba8(size, size) ),
 			rows: Vec::new(),
 			used_height: 0,
+			atlas_filename: None,
+			image_filename: None,
 		}
 	}
 
@@ -187,7 +191,9 @@ impl Atlas {
 			entries: Vec::new(),
 			image: None,
 			rows: Vec::new(),
-			used_height:0 ,
+			used_height: 0,
+			atlas_filename: Some( atlasname.to_string() ),
+			image_filename: None,
 		};
 
 		match a.load_atlas( &atlasname, a.size ) {
@@ -431,9 +437,9 @@ impl Atlas {
 	pub fn hello() {
 		println!("Atlas::hello()");
 	}
-	pub fn info(
-		input: &str
-	) -> Result<u32,OmError>{
+
+	pub fn all_for_template( input: &str ) -> Vec< Atlas > {
+		let mut result = Vec::new();
 		let mut n = 0;
 		loop {
 			let inname = simple_format_u32( input, n ); //format!(output, n);
@@ -455,18 +461,43 @@ impl Atlas {
 
 			let size = img.dimensions().0;
 
-			let a = Atlas::new_from_atlas( &atlasname, size );
-			// add image to atlas
-			println!("Atlas {} {}", atlasname, pngname);
+			let mut a = Atlas::new_from_atlas( &atlasname, size );
+			a.image_filename = Some( pngname.to_string() );
+			a.image = Some( img );
+
+			result.push( a );
+			n += 1;
+		}
+		result
+	}
+
+	pub fn info(
+		input: &str
+	) -> Result<u32,OmError>{
+		let atlases = Atlas::all_for_template( &input );
+
+		for a in &atlases {
+//			println!("Atlas {} {}", atlasname, pngname);
+			match ( &a.atlas_filename, &a.image_filename ) {
+				( None, None ) => {},
+				( Some( n ), None ) => {
+					println!("Atlas {}", n);
+				},
+				( Some( a ), Some( i ) ) => {
+					println!("Atlas {} {}", a, i);
+				},
+				( None, Some( i ) ) => {
+					println!("Atlas Image: {}", i);
+				},
+			}
 			println!("\tSize  : {}", a.size);
 			println!("\tBorder: {}", a.border);
 			for e in &a.entries {
 				println!("\t\t{:>5} x {:>5}  @  {:>5},{:>5}   | {}", e.width, e.height, e.x, e.y, e.filename );
 			}
-
-			n += 1;
 		}
 
+		let n = atlases.len() as u32;
 		if n == 0 {
 			Err(OmError::Generic("No matching atlas found.".to_string()))
 		} else {

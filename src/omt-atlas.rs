@@ -2,6 +2,7 @@ use clap::{Arg, App, SubCommand};
 use std::process;
 
 use omt::atlas::Atlas;
+use omt::atlas::AtlasPreviewer;
 use omt::util::OmError;
 
 fn main() {
@@ -38,6 +39,14 @@ fn main() {
 						)
 					)
 					.subcommand(SubCommand::with_name("info")
+						.arg(Arg::with_name("input")
+							.long("input")
+							.value_name("INPUT")
+							.help("Set the input")
+							.takes_value(true)
+						)
+					)
+					.subcommand(SubCommand::with_name("preview")
 						.arg(Arg::with_name("input")
 							.long("input")
 							.value_name("INPUT")
@@ -99,6 +108,23 @@ fn main() {
 		let input = sub_matches.value_of("input").unwrap_or("input-atlas-%d").to_string();
 		println!("input         : {:?}", input );
 		match Atlas::info( &input ) {
+			Ok( _ ) => {
+				process::exit( 0 );
+			},
+			Err( e ) => {
+				println!("Error getting info from  atlas." );
+				match e {
+					OmError::NotImplemented( e ) => println!("NotImplemented: {:?}", e ),
+					OmError::Generic( e ) => println!("Generic: {:?}", e ),
+				};
+				process::exit( -1 );
+			}
+		}
+	}
+	if let ("preview", Some( sub_matches ) ) = matches.subcommand() {
+		let input = sub_matches.value_of("input").unwrap_or("input-atlas-%d").to_string();
+		println!("input         : {:?}", input );
+		match AtlasPreviewer::preview( &input ) {
 			Ok( _ ) => {
 				process::exit( 0 );
 			},
