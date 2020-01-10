@@ -11,8 +11,9 @@ pub struct AtlasPreviewer {
 
 }
 
-const WIDTH: usize = 1024;
-const HEIGHT: usize = 1024;
+const SIZE: usize = 1024;
+const WIDTH: usize = SIZE;
+const HEIGHT: usize = SIZE;
 const GRID_SIZE: usize = 64;
 impl AtlasPreviewer {
 
@@ -58,11 +59,15 @@ impl AtlasPreviewer {
 				let now = SystemTime::now();
 				let time = now.duration_since(start_time).unwrap().as_millis();
 				let time = time as u128 as f32 / 1000.0;
+
+//				let gs =  0.8+0.2*( 0.5 + 0.5 * ( time * 1.5 ).sin() );
+//	    		grid_draw_buffer.fill_with_grid( ( 64 as f32 * gs ) as u32, 0xffffffff, 0x00000000 );
+
 				if prev_active_atlas != active_atlas {
 					match atlases.get( active_atlas ) {
 						None => {},
 						Some( a ) => {
-							println!("New active atlas {:?}", a );
+//							println!("New active atlas {:?}", a );
 							prev_active_atlas = active_atlas;
 							match &a.image {
 								None => {
@@ -74,8 +79,10 @@ impl AtlasPreviewer {
 
 									// assumption texture is square
 									let is = i.dimensions().0 as f32;
-									scale = is / 1024.0;
+									scale = is / WIDTH as f32;
+									println!("New atlas scale: {:?}", scale );
 									img_draw_buffer.set_scale( scale );
+									draw_buffer.set_scale( scale );
 									img_draw_buffer.copy_from_draw_buffer( &grid_draw_buffer );
 									img_draw_buffer.blit_image( &i );
 								},
@@ -91,8 +98,10 @@ impl AtlasPreviewer {
 					Some( a ) => {
 						draw_buffer.copy_from_draw_buffer( &img_draw_buffer );
 						for e in &a.entries {
-							draw_buffer.draw_frame( e.x, e.y, e.width, e.height, frame_col );
+							let bs = ( 5.0 * draw_buffer.get_scale() ).trunc() as u32; 
+							draw_buffer.draw_frame( e.x as i32, e.y as i32, e.width, e.height, frame_col, bs );
 						}
+//						draw_buffer.draw_frame( 0, 0, 2048, 2048, 0x208020ff, 15 );
 					},
 				}
 			// We unwrap here as we want this code to exit if it fails. Real applications may want to handle this in a different way
