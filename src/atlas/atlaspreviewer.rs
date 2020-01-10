@@ -35,11 +35,13 @@ impl AtlasPreviewer {
 			let mut active_atlas = 0;
 
 			// display
+
+			let mut grid_draw_buffer = DrawBuffer::new( WIDTH as u32, HEIGHT as u32);
 			let mut img_draw_buffer = DrawBuffer::new( WIDTH as u32, HEIGHT as u32);
 			let mut draw_buffer = DrawBuffer::new( WIDTH as u32, HEIGHT as u32);
 
 			let mut window = Window::new(
-				"Test - ESC to exit",
+				"omt-atlas - preview - ESC to exit",
 				WIDTH,
 				HEIGHT,
 				WindowOptions::default(),
@@ -49,6 +51,8 @@ impl AtlasPreviewer {
 			});
 
     		window.limit_update_rate(Some(std::time::Duration::from_micros(16600)));
+
+    		grid_draw_buffer.fill_with_grid( 64, 0xffffffff, 0x00000000 );
 
 			while window.is_open() && !window.is_key_down(Key::Escape) {
 				let now = SystemTime::now();
@@ -72,6 +76,7 @@ impl AtlasPreviewer {
 									let is = i.dimensions().0 as f32;
 									scale = is / 1024.0;
 									img_draw_buffer.set_scale( scale );
+									img_draw_buffer.copy_from_draw_buffer( &grid_draw_buffer );
 									img_draw_buffer.blit_image( &i );
 								},
 							}							
@@ -79,10 +84,7 @@ impl AtlasPreviewer {
 					}
 				}
 
-//				let frame_col = ( frame_col as f32 * ( time * 0.1 ).sin() ) as u32;
 				let m = 0.5 + 0.5 * ( time * 1.5 ).sin();
-//				println!("m {:?}", m );
-//				let frame_col = AtlasPreviewer::mixRgba( 0xffffffff, 0x000000ff, m );
 				let frame_col = DrawBuffer::mixRgba( 0xffffffff, 0x802080ff, m );
 				match atlases.get( active_atlas ) {
 					None => {},
@@ -95,7 +97,6 @@ impl AtlasPreviewer {
 				}
 			// We unwrap here as we want this code to exit if it fails. Real applications may want to handle this in a different way
 			window
-//				.update_with_buffer(&buffer, WIDTH, HEIGHT)
 				.update_with_buffer(draw_buffer.get_data(), draw_buffer.get_width() as usize, draw_buffer.get_height() as usize )
 				.unwrap();
 			}

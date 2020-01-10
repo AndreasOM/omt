@@ -31,6 +31,22 @@ impl DrawBuffer {
 		self.data.copy_from_slice( other.get_data() );
 	}
 
+	pub fn fill_with_grid( &mut self, size: u32, col_a: u32, col_b: u32 ) {
+		let h = self.height; //image.dimensions().0;
+		let w = self.width; //image.dimensions().1;
+		let mut pos = 0;
+		for y in 0..h {
+			for x in 0..w {
+				if ( x/size + y/size )%2 == 0 {
+					self.data[ pos ] = col_a;
+				} else {
+					self.data[ pos ] = col_b;					
+				}
+				pos += 1;
+			}
+		}		
+	}
+
 	pub fn blit_image( &mut self, image: &DynamicImage) {
 		let mut pos = 0;
 		let h = self.height; //image.dimensions().0;
@@ -40,18 +56,21 @@ impl DrawBuffer {
 				let sx = ( x as f32 * self.scale ).trunc() as u32;
 				let sy = ( y as f32 * self.scale ).trunc() as u32;
 				let pixel = image.get_pixel( sx, sy );
-				let r = pixel[ 0 ];// as u32;
-				let g = pixel[ 1 ];// as u32;
-				let b = pixel[ 2 ];// as u32;
-				let a = pixel[ 3 ];// as u32;
-				let bg = ( 0x20 + (( x/GRID_SIZE + y/GRID_SIZE )%2)*0xB0 ) as u8;
-				let bg = [bg,bg,bg];
+				let r = pixel[ 0 ] as u32;
+				let g = pixel[ 1 ] as u32;
+				let b = pixel[ 2 ] as u32;
+				let a = pixel[ 3 ] as u32;
+//				let bg = ( 0x20 + (( x/GRID_SIZE + y/GRID_SIZE )%2)*0xB0 ) as u8;
+//				let bg = [bg,bg,bg];
+				let bg = self.data[ pos ];
+				let fg: u32 = ( r << 16 )|( g << 8 )|( b << 0 );
+				let rgb = DrawBuffer::mixRgba( fg, bg, ( a as f32 )/255.0 );
 
-				let r = DrawBuffer::mixByte( r, bg[ 0 ], a ) as u32;
-				let g = DrawBuffer::mixByte( g, bg[ 1 ], a ) as u32;
-				let b = DrawBuffer::mixByte( b, bg[ 2 ], a ) as u32;
+//				let r = DrawBuffer::mixByte( r, bg[ 0 ], a ) as u32;
+//				let g = DrawBuffer::mixByte( g, bg[ 1 ], a ) as u32;
+//				let b = DrawBuffer::mixByte( b, bg[ 2 ], a ) as u32;
 
-				let rgb: u32 = ( r << 16 )|( g << 8 )|( b << 0 );
+//				let rgb: u32 = ( r << 16 )|( g << 8 )|( b << 0 );
 				self.data[ pos ] = rgb;
 				pos += 1;
 			}
