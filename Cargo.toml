@@ -22,6 +22,10 @@ path = "src/omt-asset.rs"
 name = "omt-packer"
 path = "src/omt-packer.rs"
 
+[[bin]]
+name = "omt-soundbank"
+path = "src/omt-soundbank.rs"
+
 [dependencies]
 byteorder = "~1.3.2"
 clap = "~2.33.0"

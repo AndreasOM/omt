@@ -1,0 +1,14 @@
+# id;file;max instances;drop mode;flags (loop);
+	     # comment with mixed whitespace in front
+
+
+
+BLUB;bubble_pop_01.wav;10;OLDEST;NONE;
+BUBBLE-LOOP;bubble_blast_loop.wav;1;OLDEST;LOOP;
+DEATH;fiish_death.wav;1;OLDEST;NONE;
+PICKUP-COIN;picked_coin.wav;10;OLDEST;NONE;
+
+UI-CLICK;button.wav;2;OLDEST;NONE;
+
+# TEST;test.wav;99;DROP;WHATEVER;
+
