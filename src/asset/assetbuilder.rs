@@ -148,6 +148,7 @@ impl AssetBuilder{
 							format!("\t\"{}\"", s).clone()
 						).collect::<Vec<_>>().join(" ").to_string()
 					},
+					"data_directory" => self.data_directory.clone(),
 					param => {
 						println!("{:?}", tool_run.parameters.get( param ) );
 						tool_run.parameters.get( param ).unwrap_or( &ParameterValue::NoValue ).to_string()
