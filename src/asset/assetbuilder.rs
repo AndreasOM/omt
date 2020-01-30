@@ -104,19 +104,26 @@ impl AssetBuilder{
 				Ok(0)
 			},
 			"copy" => {
-				let source = tool_run.input[0].clone();
-				let dest = format!("{}/{}", self.data_directory, tool_run.output );
-				match fs::copy( &source, &dest ) {
-					Ok( bytes ) => {
-						println!("📁 🔧 ✅ Copied {:?} bytes from {:?} to {:?}", bytes, &source, &dest);
-						let number_of_assets_updated = 1;
-						Ok( number_of_assets_updated )
-					},
-					Err( e ) => {
-						println!("📁 🔧 ‼️ Error: Copying from {:?} to {:?}", &source, &dest);
-						Err( "Error while copying" )
-					},
+				let mut number_of_assets_updated = 0;
+				for source in &tool_run.input {
+
+//				let source = tool_run.input[0].clone();
+					let source_filename = Path::new( source ).file_name().unwrap().to_str().unwrap();//_or(OsStr::new("")).to_str();
+					let output = self.replace_placeholders( &tool_run, &source_filename );
+					println!("OUTPUT {:?}", output );
+					let dest = format!("{}/{}", self.data_directory, output );
+					match fs::copy( &source, &dest ) {
+						Ok( bytes ) => {
+							println!("📁 🔧 ✅ Copied {:?} bytes from {:?} to {:?}", bytes, &source, &dest);
+							number_of_assets_updated += 1;
+						},
+						Err( e ) => {
+							println!("📁 🔧 ‼️ Error: Copying from {:?} to {:?}", &source, &dest);
+							return Err( "Error while copying" );
+						},
+					}
 				}
+				Ok( number_of_assets_updated )
 			},
 			cmd => {
 				println!("Unhandled asset tool command: {:?}", cmd );
@@ -125,16 +132,17 @@ impl AssetBuilder{
 		}
 	}
 
-	fn tool_call_external(
+	fn replace_placeholders(
 		&self,
 		tool_run: &ToolRun,
-	)
-	-> Result<u32,&'static str> {
-		let cmd_line = tool_run.cmd_line.clone();
+		input: &str
+		)
+	-> String {
+		let output = input.clone();
 		let re = Regex::new(r"\$\{(.*?)\}").unwrap();
 
-		let cmd_line = re.replace_all(
-			&cmd_line,
+		let output = re.replace_all(
+			&output,
 			|c: &regex::Captures| {
 				let placeholder = c.get(1).map_or( "", |m| m.as_str() );
 				println!("Found {:?}", placeholder );
@@ -156,6 +164,16 @@ impl AssetBuilder{
 				}
 			}
 		);
+
+		output.to_string()
+	}
+
+	fn tool_call_external(
+		&self,
+		tool_run: &ToolRun,
+	)
+	-> Result<u32,&'static str> {
+		let cmd_line = self.replace_placeholders( &tool_run, &tool_run.cmd_line );
 		println!("Calling\n{}", cmd_line );
 //		let output = Command::new("/bin/sh").args(&["-c", "echo", ""]).output();
 //		let output = Command::new("/bin/sh").args(&["-c", "date", ""]).output();
@@ -241,10 +259,14 @@ impl AssetBuilder{
 				}
 
 //				println!("INPUT {:?}", input );
+				let input_original = input.iter().map( |i| {
+					format!( "{}", i )
+				}).collect::<Vec<_>>();
 				let input = input.iter().map( |i| {
 					format!( "{}/{}", asset_path.display(), i )
 				}).collect::<Vec<_>>();
 //				println!("INPUT {:?}", input );
+//				println!("INPUT_ORIGINAL {:?}", input_original );
 //				return Ok(1);
 
 //				let input = doc["input"].as_str();
