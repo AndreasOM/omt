@@ -70,7 +70,7 @@ impl Soundbank {
 		f.write_u16::<LittleEndian>( 0x0001 ).unwrap();
 		let compress = 'K';
 		f.write_all(&[
-			0x46, 0x49, 0x53, 0x48, 0x53, 0x42, 0x4e,	// FISHSBN(K)
+			0x4f, 0x4d, 0x53, 0x4e, 0x44, 0x42, 0x4e,	// OMSNDBN(K)
 			compress as u8,								// K or Z
 			0x02, 0x00, 0x00, 0x00,
 
@@ -106,7 +106,7 @@ impl Soundbank {
 		}
 		Ok( 0 )
 	}
-	
+
 	fn save_header( &self, filename: &str ) -> Result< u32, OmError > {
 		let mut f = match File::create(filename) {
 			Ok( f ) => f,
