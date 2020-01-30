@@ -12,7 +12,7 @@ impl CrcHelper {
 			soundId = Zlib.crc32( soundName )
 
 */
-	pub fn crc_from_name_upcase_underscore( name: &str ) -> u32 {
+	pub fn clean_name_from_name_upcase_underscore( name: &str ) -> String {
 		let upcase_name = name.to_uppercase();
 		// Ruby: .gsub( /\W\./, ' ' ) // should be 'a-zA-Z0-9_', but actual code behaves differently
 		let clean_name: String = upcase_name.chars().map(|c| match c {
@@ -26,6 +26,11 @@ impl CrcHelper {
 	//		0x7f => c,			// ignore DEL
 			_ => '_'
 		}).collect();
+
+		clean_name
+	}
+	pub fn crc_from_name_upcase_underscore( name: &str ) -> u32 {
+		let clean_name = CrcHelper::clean_name_from_name_upcase_underscore( name );
 		println!("clean_name: {:?}", clean_name );
 		let crc = crc32::checksum_ieee(clean_name.as_bytes());
 

@@ -31,10 +31,12 @@ impl Entry {
 		drop_mode: DropMode,
 		do_loop: bool,
 	) -> Entry {
+		let clean_name = CrcHelper::clean_name_from_name_upcase_underscore( &id );
 		let id_crc = CrcHelper::crc_from_name_upcase_underscore( &id );
+
 		println!("{:?} -> {:?}", id, id_crc );
 		Entry {
-			id:				id.to_string(),
+			id:				clean_name.to_string(),
 			id_crc:			id_crc,
 			filename:		filename.to_string(),
 			max_instances:	max_instances,
@@ -104,6 +106,31 @@ impl Soundbank {
 		}
 		Ok( 0 )
 	}
+	
+	fn save_header( &self, filename: &str ) -> Result< u32, OmError > {
+		let mut f = match File::create(filename) {
+			Ok( f ) => f,
+			Err( _ ) => return Err(OmError::Generic("io".to_string())),
+		};
+		write!( &mut f, "#pragma once\n" );
+		write!( &mut f, "namespace om\n{{\n" );
+
+		write!( &mut f, "\t#if !defined( SOUNDBANK_DEFINES )\n" );
+		write!( &mut f, "\t\t#define SOUNDBANK_DEFINES\n" );
+		write!( &mut f, "\t\tenum SoundBankLoopMode\n" );
+		write!( &mut f, "\t\t{{\n" );
+		write!( &mut f, "\t\t\tOldest = 0,\n" );
+		write!( &mut f, "\t\t\tDrop   = 1,\n" );
+		write!( &mut f, "\t\t}};\n" );
+		write!( &mut f, "\t\t#define SOUNDBANK_ENTRY_LOOP_BIT 1\n" );
+		write!( &mut f, "\t#endif\n" );
+
+		for e in &self.entries {
+			write!( &mut f, "\t#define CRC_{:} 0x{:x}\n", e.id, e.id_crc );
+		}
+		write!( &mut f, "}} // namespace om\n" );
+		Ok( 0 )
+	}
 
 	pub fn build(
 		output: &str,
@@ -155,6 +182,12 @@ impl Soundbank {
 		println!("{:#?}", soundbank );
 
 		soundbank.save_sbk( output );
+		if header.len() > 0 {
+			match soundbank.save_header( header ) {
+				Err( e ) => return Err( e ),
+				Ok( n ) => return Ok( n ),
+			}
+		}
 
 		Ok( 0 )
 	}
