@@ -1,9 +1,14 @@
 # In Progress
 
 
-# TODO
-
 [ ] Initial version of omt-font
+	[x] Write stub for new command
+	[x] Generate images for glyphs
+	[ ] Put glyphs into "atlas", and then(!) rasterize into image
+	[ ] Write data output
+	[ ] Convert glyph pixels to signed distance
+
+# TODO
 
 [ ] Reduce debug noise
 [ ] Find solution for fully qualified filename, vs original filename
