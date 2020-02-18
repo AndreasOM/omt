@@ -1,3 +1,4 @@
+use crate::atlas::AtlasFitter;
 use crate::util::OmError;
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use image::{ DynamicImage, ImageFormat, GenericImage, GenericImageView };
@@ -184,6 +185,26 @@ impl Atlas {
 		}
 	}
 
+	pub fn add_entry( &mut self, entry: Entry ) {
+		self.entries.push( entry );
+	}
+
+	pub fn blit_entries( &mut self ) {
+		match &mut self.image {
+			None => {},
+			Some( di ) => {
+				for entry in &self.entries {
+					match &entry.image {
+						None => {},
+						Some( image ) => {
+							Atlas::blit( di, &image, entry.x, entry.y );
+						}
+					}
+				}
+			},
+		}
+	}
+
 	fn new_from_atlas( atlasname: &str, size: u32 ) -> Atlas {
 		let mut a = Atlas {
 			size: size,
@@ -217,93 +238,6 @@ impl Atlas {
 				dest.put_pixel( dx, dy, pixel );
 			}
 		}
-	}
-	fn add_row( &mut self, height: u32 ) -> Option<usize> {
-		if height <= ( self.size - self.used_height ) {
-			let row = Row::new( self.used_height, self.size, height );
-			self.used_height += height;
-			let row_index = self.rows.len();
-//			println!("Created row #{:?} at {:?}. {:?} used now.", row_index, row.y, self.used_height );
-			self.rows.push( row );
-			Some( row_index )
-		} else {
-//			println!("Can not create row with {:?} height, {:?} used of {:?}", height, self.used_height, self.size );
-			None
-		}
-	}
-	fn add_entry_to_row_with_index( &mut self, entry: &Entry, row_index: usize ) -> bool {
-		match self.rows.get_mut( row_index ) {
-			None => false,	// give up, should never happen
-			Some( row ) => {
-//				println!("Got row {:?}", row );
-				if row.would_fit( entry.width, entry.height  ) {
-					// add it
-					let mut e = entry.clone();
-					// blitting
-					let x = row.end_x;
-					let y = row.y;
-					match &mut self.image {
-						None => {},
-						Some( di ) => {
-							Atlas::blit( di, &e.image.unwrap(), x, y );
-						},
-					}
-					row.end_x += e.width;
-					e.image = None;	// cleanup, data not needed anymore
-					e.set_position( x, y );
-					self.entries.push(
-						e
-					);
-					true
-				} else {
-//					println!("Row {:?} would not fit {:?}", row, entry );
-					false
-				}
-			}
-		}
-	}
-	/* would prefer pass through with ownership transfer and return, but need more rust knowledge
-	fn add_entry( &mut self, entry: &Entry ) -> Result<usize, Entry> {
-		Err( *entry )
-	*/
-	fn add_entry( &mut self, entry: &Entry ) -> bool {
-		let h = entry.height;
-
-		if self.size < entry.width || self.size < entry.height {
-			false
-		} else {
-			// find row
-			let mut candidates = Vec::new();
-
-			for ri in 0..self.rows.len() {
-				let r = &self.rows[ ri ];
-				if r.would_fit( entry.width, entry.height ) {
-//					println!("Row {:?} would fit {:?}", r, entry );
-					if r.height < 2*entry.height {	// do not waste too much space, "2" is purely guessed
-						candidates.push( ri );
-					}
-				}
-			}
-
-			if candidates.len() > 0 {
-				// find best candidate
-				let best_candidate_index = 0;	// :TODO: actually find best candidate
-				/*
-				for ci in 0..candidates.len() {
-					//
-				}
-				*/
-//				println!("Got candidate rows. Using best one {:?}", candidates[ best_candidate_index ] );
-				self.add_entry_to_row_with_index( entry, candidates[ best_candidate_index ] )
-			} else {
-				// or create new row
-//				println!("No candidate row found creating new one. {:?}", self);
-				match self.add_row( h ) {
-					None				=> false,													// give up
-					Some( row_index )	=> self.add_entry_to_row_with_index( entry, row_index ),
-				}
-			}
-		} 
 	}
 
 	fn save_png( &self, filename: &str ) -> Result< u32, OmError > {
@@ -527,6 +461,34 @@ impl Atlas {
 
 		let mut atlases: Vec<Atlas> = Vec::new();
 
+		// something that takes a list of entries, and return a list of pages with those entries
+
+		let mut atlas_fitter = AtlasFitter::new();
+
+		for (idx, e ) in entries.iter().enumerate() {
+			atlas_fitter.add_entry( idx, e.width, e.height );
+		}
+
+//		println!("atlas_fitter {:#?}", atlas_fitter);
+
+		let pages = atlas_fitter.fit( size, border );
+//		println!("pages {:#?}", pages);
+
+		// create atlases
+		for p in &pages {
+			let mut a = Atlas::new( size, border );
+			for e in &p.entries {
+				println!("{:#?}", e );
+				let mut entry = &entries[ e.id ];
+				let mut entry = entry.clone();
+				entry.set_position( e.x, e.y );
+				println!("{:#?}", entry );
+				a.add_entry( entry );
+			}
+			a.blit_entries();
+			atlases.push( a );
+		}
+		/*
 		// combine outputs
 		for e in entries.drain(..) {
 			let mut did_fit = false;
@@ -545,7 +507,7 @@ impl Atlas {
 				atlases.push( a );				
 			}
 		}
-
+		*/
 		// write outputs
 		let mut n = 0;
 		for a in atlases {
