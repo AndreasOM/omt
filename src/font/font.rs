@@ -1,6 +1,8 @@
 use crate::atlas::AtlasFitter;
 use crate::util::OmError;
 
+use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
+
 use std::fs::File;
 use std::io::{BufReader, Read, Write};
 
@@ -120,10 +122,11 @@ impl Font {
 			g.x += self.border;
 			g.y += self.border;
 		}
-		
+
 		let glyphs = self.glyphs.clone(); // needed to avoid borrow problem below :(
 		for g in glyphs {
 			let ch = format!("{}", g.codepoint as char );
+//			println!("Blitting {:?}", ch );
 			let layout = font.layout( &ch, scale, start);
 			for pg in layout {
 				match pg.pixel_bounding_box() {
@@ -142,6 +145,74 @@ impl Font {
 
 		true
 	}
+
+	fn save_omfont( &self, filename: &str ) -> Result< u32, OmError > {
+		let mut f = match File::create(filename) {
+			Ok( f ) => f,
+			Err( _ ) => return Err(OmError::Generic("io".to_string())),
+		};
+		f.write_all(&[
+			0x4f, 0x4d, 0x46, 0x4e,	// OMFN
+
+		]).unwrap();
+
+		f.write_u32::<LittleEndian>( self.size ).unwrap();
+
+		if self.glyphs.len() != 128 {
+			println!("Wrong number of glyphs {} expected 128", self.glyphs.len() );
+			return Err(OmError::Generic("Wrong number of glyphs".to_string()))
+		}
+
+		for g in &self.glyphs {
+			let tex_x = ( g.x as f32 ) / ( self.texsize as f32 );
+			let tex_y = ( g.x as f32 ) / ( self.texsize as f32 );
+			let tex_w = ( g.width as f32 ) / ( self.texsize as f32 );
+			let tex_h = ( g.height as f32 ) / ( self.texsize as f32 );
+
+			let tex_s = self.texsize as f32;
+			// Y is flipped for position (for historic reasons)
+
+			// t t-h t t-h
+			let v_top = g.height as f32; // t
+			let v_bot = 0.0;			 // t - h
+
+			// upper left
+			f.write_f32::<LittleEndian>( tex_x ).unwrap();
+			f.write_f32::<LittleEndian>( tex_y ).unwrap();
+			f.write_f32::<LittleEndian>( 0.0 ).unwrap();
+			f.write_f32::<LittleEndian>( v_top ).unwrap();
+			f.write_f32::<LittleEndian>( 0.0 ).unwrap();
+
+			// lower left
+			f.write_f32::<LittleEndian>( tex_x ).unwrap();
+			f.write_f32::<LittleEndian>( tex_y + tex_h ).unwrap();
+			f.write_f32::<LittleEndian>( 0.0 ).unwrap();
+			f.write_f32::<LittleEndian>( v_bot).unwrap();
+			f.write_f32::<LittleEndian>( 0.0 ).unwrap();
+
+			// upper right
+			f.write_f32::<LittleEndian>( tex_x + tex_w ).unwrap();
+			f.write_f32::<LittleEndian>( tex_y ).unwrap();
+			f.write_f32::<LittleEndian>( g.width as f32 ).unwrap();
+			f.write_f32::<LittleEndian>( v_top as f32 ).unwrap();
+			f.write_f32::<LittleEndian>( 0.0 ).unwrap();
+
+			// lower right
+			f.write_f32::<LittleEndian>( tex_x + tex_w ).unwrap();
+			f.write_f32::<LittleEndian>( tex_y + tex_h ).unwrap();
+			f.write_f32::<LittleEndian>( g.width as f32 ).unwrap();
+			f.write_f32::<LittleEndian>( v_bot ).unwrap();
+			f.write_f32::<LittleEndian>( 0.0 ).unwrap();
+		}
+
+		for g in &self.glyphs {
+			// advance
+			f.write_u16::<LittleEndian>( g.width as u16 ).unwrap();
+		}
+
+		Ok( 0 )
+	}
+
 
 	pub fn create(
 		output: &str, texsize: u32, size: u32, border: u32, input: &Vec<&str> 
@@ -173,23 +244,31 @@ impl Font {
 		let start = point(0.0, 0.0 /*+ v_metrics.ascent*/ );
 
 		let mut the_font = Font::new( texsize, size, border );
+		let mut cnt = 0;
 		for c in 0..128u8 {
-			let g = font.glyph( c as char );
+			cnt += 1;
+			let codepoint = c;
+//			let codepoint = 0x30;	// :HACK:
+//			let g = font.glyph( c as char );
+			let g = font.glyph( codepoint as char );
 			let data = g.get_data();
 //			println!("{:?} -> {:#?}", c, data );
 
 			// :HACK: :TODO: rasterize after positioning into final image
-			let ch = format!("{}", c as char );
+			let ch = format!("{}", codepoint as char );
 //			println!("ch: >{:?}<", ch );
 			let layout = font.layout( &ch, scale, start);
 			for pg in layout {
 				match pg.pixel_bounding_box() {
-					None => {},
+					None => {
+						let mut glyph = Glyph::new( codepoint, 0, 0 );
+						the_font.add_glyph( glyph );
+					},
 					Some( bb ) => {
-//						println!("bb {:?}", bb );
+						println!("bb {:?}", bb );
 						let w = bb.width() as u32;
 						let h = bb.height() as u32;
-						let mut glyph = Glyph::new( c, w, h );
+						let mut glyph = Glyph::new( codepoint, w, h );
 						/*
 						pg.draw(|x, y, v| {
 //							glyph.set_pixel( ( bb.min.x+x as i32 ) , ( bb.min.y+y as i32 ), v );
@@ -202,6 +281,7 @@ impl Font {
 				}
 			}
 		}
+		println!("CNT {:?}", cnt );
 
 		if !the_font.fit_glyphs() {
 			return Err( OmError::Generic( "Failed to fit glyphs into texture".to_string() ) );
@@ -214,6 +294,13 @@ impl Font {
 		let filename = format!("{}.png", output );
 		println!("Writing texture to {}", filename );
 		the_font.image.save_with_format( filename, ImageFormat::PNG );
+
+		let filename = format!("{}.omfont", output );
+		println!("Writing font data to {}", filename );
+		match the_font.save_omfont( &filename ) {
+			Ok( _ ) => {},
+			Err( e ) => { println!("Error writing font data {:?}", e ); },
+		}
 
 		Err( OmError::NotImplemented( "Font::create Not implemented".to_string() ) )
 	}
