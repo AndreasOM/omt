@@ -77,7 +77,7 @@ impl Font {
 		let mut atlas_fitter = AtlasFitter::new();
 
 		for (idx, e ) in self.glyphs.iter().enumerate() {
-			atlas_fitter.add_entry( idx, e.width, e.height );
+			atlas_fitter.add_entry( idx, e.width+ 2*self.border, e.height+ 2*self.border );
 		}
 
 		let pages = atlas_fitter.fit( self.texsize, self.border );
@@ -116,6 +116,11 @@ impl Font {
 		let scale = Scale::uniform(self.size as f32);
 		let start = point(0.0, 0.0 /*+ v_metrics.ascent*/ );
 
+		for g in &mut self.glyphs {
+			g.x += self.border;
+			g.y += self.border;
+		}
+		
 		let glyphs = self.glyphs.clone(); // needed to avoid borrow problem below :(
 		for g in glyphs {
 			let ch = format!("{}", g.codepoint as char );
