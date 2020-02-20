@@ -10,6 +10,8 @@
 
 # TODO
 
+[ ] Cleanup atlas, and remove obsolete fitting leftovers
+
 [ ] Reduce debug noise
 [ ] Find solution for fully qualified filename, vs original filename
 [ ] Only build data when content is newer

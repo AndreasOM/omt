@@ -31,6 +31,12 @@ fn main() {
 							.help("Set the texture size")
 							.takes_value(true)
 						)
+						.arg(Arg::with_name("border")
+							.long("border")
+							.value_name("BORDER")
+							.help("Set the border size")
+							.takes_value(true)
+						)
 						.arg(Arg::with_name("input")
 							.long("input")
 							.value_name("INPUT")
@@ -45,6 +51,7 @@ fn main() {
 		let output	= sub_matches.value_of("output").unwrap_or("output-font").to_string();
 		let texsize = sub_matches.value_of("texsize").unwrap_or("1024").to_string();
 		let size	= sub_matches.value_of("size").unwrap_or("16").to_string();
+		let border	= sub_matches.value_of("border").unwrap_or("0").to_string();
 		let input	= sub_matches.values_of("input").unwrap().collect::<Vec<_>>(); 
 
 		let texsize = match u32::from_str_radix( &texsize, 10 ) {
@@ -63,9 +70,18 @@ fn main() {
 			}
 		};
 
+		let border = match u32::from_str_radix( &border, 10 ) {
+			Ok( n ) => n,
+			x => {
+				println!("Error parsing border {:?} >{}<", x, border );
+				process::exit( -1 );
+			}
+		};
+
 		println!("output         : {:?}", output );
 		println!("texsize        : {:?}", texsize );
 		println!("size           : {:?}", size );
+		println!("border         : {:?}", border );
 //		println!("input          : {:?}", input );
 		println!("input          : [" );
 		for i in &input {
@@ -73,7 +89,7 @@ fn main() {
 		}
 		println!("]" );
 
-		match Font::create( &output, texsize, size, &input ) {
+		match Font::create( &output, texsize, size, border, &input ) {
 			Ok( 1 ) => {
 				println!("1 font created" );
 				process::exit( 0 );
