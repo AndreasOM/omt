@@ -4,12 +4,13 @@
 [ ] Initial version of omt-font
 	[x] Write stub for new command
 	[x] Generate images for glyphs
-	[ ] Put glyphs into "atlas", and then(!) rasterize into image
-	[ ] Write data output
+	[x] Put glyphs into "atlas", and then(!) rasterize into image
+	[x] Write data output
 	[ ] Convert glyph pixels to signed distance
 
 # TODO
 
+[ ] Cleanup font code
 [ ] Cleanup atlas, and remove obsolete fitting leftovers
 
 [ ] Reduce debug noise

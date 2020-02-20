@@ -2,6 +2,7 @@ use clap::{Arg, App, SubCommand};
 use std::process;
 
 use omt::font::Font;
+use omt::font::FontPreviewer;
 use omt::util::OmError;
 
 fn main() {
@@ -43,6 +44,14 @@ fn main() {
 							.help("Set the input font(s) (only .ttf supported)")
 							.takes_value(true)
 							.multiple(true)
+						)
+					)
+					.subcommand(SubCommand::with_name("preview")
+						.arg(Arg::with_name("input")
+							.long("input")
+							.value_name("INPUT")
+							.help("Set the input")
+							.takes_value(true)
 						)
 					)
 					.get_matches();
@@ -100,6 +109,23 @@ fn main() {
 			},
 			Err( e ) => {
 				println!("Error creating font >{:?}<", e );
+				process::exit( -1 );
+			}
+		}
+	}
+	if let ("preview", Some( sub_matches ) ) = matches.subcommand() {
+		let input = sub_matches.value_of("input").unwrap_or("output-font").to_string();
+		println!("input         : {:?}", input );
+		match FontPreviewer::preview( &input ) {
+			Ok( _ ) => {
+				process::exit( 0 );
+			},
+			Err( e ) => {
+				println!("Error getting info from font." );
+				match e {
+					OmError::NotImplemented( e ) => println!("NotImplemented: {:?}", e ),
+					OmError::Generic( e ) => println!("Generic: {:?}", e ),
+				};
 				process::exit( -1 );
 			}
 		}

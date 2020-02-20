@@ -10,12 +10,13 @@ use image::{ DynamicImage, ImageFormat, GenericImage, GenericImageView };
 use rusttype::{point, FontCollection, PositionedGlyph, Scale};
 
 #[derive(Debug,Copy,Clone)]
-struct Glyph {
+pub struct Glyph {
 	pub codepoint:	u8,
-	width:		u32,
-	height:		u32,
-	x:			u32,
-	y:			u32,
+	pub width:		u32,
+	pub height:		u32,
+	pub x:			u32,
+	pub y:			u32,
+	pub advance:	u16,
 }
 /*
 impl std::fmt::Debug for Glyph {
@@ -36,12 +37,13 @@ impl Glyph {
 			height: height,
 			x: 0,
 			y: 0,
+			advance: 0,
 		}
 	}
 }
 
 pub struct Font {
-	glyphs: 	Vec<Glyph>,
+	pub glyphs: Vec<Glyph>,
 	texsize:	u32,
 	size:		u32,
 	border:		u32,
@@ -70,6 +72,78 @@ impl Font {
 			border: border,
 			image: image::DynamicImage::new_rgba8( texsize, texsize ),			
 		}
+	}
+
+	fn load_omfont( &mut self, filename: &str ) -> Result< u32, OmError > {
+		let f = match File::open(filename) {
+			Ok( f ) => f,
+			Err( _ ) => return Err(OmError::Generic("io".to_string())),
+		};
+
+		let mut bufreader = BufReader::new( f );
+		let magic = match bufreader.read_u32::<LittleEndian>() { //.unwrap_or( 0xffff );
+			Ok( m ) => m,
+			x => {
+				println!("{:?}", x);
+				return Err(OmError::Generic("reading from buffer".to_string()))
+			},
+		};
+		if magic != 0x4e464d4f {
+			println!("Got magic {:#08x} from {:?}", magic, bufreader);
+			return Err( OmError::Generic("Broken file magic".to_string() ) );
+		}
+
+		let height = bufreader.read_u32::<LittleEndian>().unwrap_or( 0 );
+
+		let mut tex_coords = [ 0f32; 4*2 ];
+		let mut v_pos = [ 0f32; 4*3 ];
+
+		for codepoint in 0..128u8 {
+			for i in 0..4 {
+				tex_coords[ i*2 + 0 ] = bufreader.read_f32::<LittleEndian>().unwrap_or( 0.0 );
+				tex_coords[ i*2 + 1 ] = bufreader.read_f32::<LittleEndian>().unwrap_or( 0.0 );
+				v_pos[ i*2 + 0 ] = bufreader.read_f32::<LittleEndian>().unwrap_or( 0.0 );
+				v_pos[ i*2 + 1 ] = bufreader.read_f32::<LittleEndian>().unwrap_or( 0.0 );
+				v_pos[ i*2 + 2 ] = bufreader.read_f32::<LittleEndian>().unwrap_or( 0.0 );
+			}
+			println!("{:#?}", tex_coords );
+			let tex_l = tex_coords[ 0*2 + 0 ];
+			let tex_t = tex_coords[ 0*2 + 1 ];
+			let tex_r = tex_coords[ 3*2 + 0 ];
+			let tex_b = tex_coords[ 3*2 + 1 ];
+
+			let tex_w = ( tex_r - tex_l ) * self.texsize as f32 ;
+			let tex_h = ( tex_b - tex_t ) * self.texsize as f32;
+
+//			println!("{:?} {:?}", tex_w, tex_h );
+			let mut g = Glyph::new( codepoint, tex_w as u32, tex_h as u32 );
+			g.x = ( tex_l * self.texsize as f32 ) as u32;
+			g.y = ( tex_t * self.texsize as f32 ) as u32;
+			self.glyphs.push( g );
+//			let left_tx = bufreader.read_f32::<LittleEndian>().unwrap_or( 0.0 );
+		}
+		for codepoint in 0..128u8 {
+			let advance = bufreader.read_u16::<LittleEndian>().unwrap_or( 0xff );
+			self.glyphs[ codepoint as usize ].advance = advance as u16;
+		}
+		Ok( 0 )
+	}
+
+	fn new_from_omfont( fontname: &str ) -> Font {
+		let texsize = 1024;
+		let size = 40;
+		let border = 0;
+
+		let mut f = Font {
+			glyphs: Vec::new(),
+			texsize: texsize,
+			size: size,
+			border: border,
+			image: image::DynamicImage::new_rgba8( texsize, texsize ),			
+		};
+		f.load_omfont( fontname );
+
+		f
 	}
 	fn add_glyph( &mut self, glyph: Glyph ) {
 		self.glyphs.push( glyph );
@@ -146,6 +220,21 @@ impl Font {
 		true
 	}
 
+	pub fn load( name: &str ) -> Result< Font, OmError > {
+		let fontname = format!("{}.omfont", name );
+		let mut font = Font::new_from_omfont( &fontname );
+
+		let pngname = format!("{}.png", name );
+		let img = image::open(&pngname).unwrap();
+		if img.dimensions().0 != img.dimensions().1 {
+			println!("Error: Non-square texture for font found with dimensions {:?}", img.dimensions());
+			return Err( OmError::Generic( "Error: Non-square texture for font".to_string() ) )
+		}
+		font.image = img;
+
+//		Err( OmError::Generic( "Font::load not implemented".to_string() ) )
+		Ok( font )
+	}
 	fn save_omfont( &self, filename: &str ) -> Result< u32, OmError > {
 		let mut f = match File::create(filename) {
 			Ok( f ) => f,
@@ -165,14 +254,12 @@ impl Font {
 
 		for g in &self.glyphs {
 			let tex_x = ( g.x as f32 ) / ( self.texsize as f32 );
-			let tex_y = ( g.x as f32 ) / ( self.texsize as f32 );
+			let tex_y = ( g.y as f32 ) / ( self.texsize as f32 );
 			let tex_w = ( g.width as f32 ) / ( self.texsize as f32 );
 			let tex_h = ( g.height as f32 ) / ( self.texsize as f32 );
 
 			let tex_s = self.texsize as f32;
-			// Y is flipped for position (for historic reasons)
 
-			// t t-h t t-h
 			let v_top = g.height as f32; // t
 			let v_bot = 0.0;			 // t - h
 
@@ -207,7 +294,7 @@ impl Font {
 
 		for g in &self.glyphs {
 			// advance
-			f.write_u16::<LittleEndian>( g.width as u16 ).unwrap();
+			f.write_u16::<LittleEndian>( g.advance as u16 ).unwrap();
 		}
 
 		Ok( 0 )
@@ -255,28 +342,41 @@ impl Font {
 //			println!("{:?} -> {:#?}", c, data );
 
 			// :HACK: :TODO: rasterize after positioning into final image
-			let ch = format!("{}", codepoint as char );
+			let ch = format!("{}#", codepoint as char );
 //			println!("ch: >{:?}<", ch );
 			let layout = font.layout( &ch, scale, start);
+			let mut maybe_glyph: Option::<Glyph> = None;
 			for pg in layout {
+				let pos = pg.position();
 				match pg.pixel_bounding_box() {
 					None => {
 						let mut glyph = Glyph::new( codepoint, 0, 0 );
 						the_font.add_glyph( glyph );
 					},
 					Some( bb ) => {
-						println!("bb {:?}", bb );
-						let w = bb.width() as u32;
-						let h = bb.height() as u32;
-						let mut glyph = Glyph::new( codepoint, w, h );
+//						println!("bb {:?}", bb );
+						match maybe_glyph {
+							None => {
+								let w = bb.width() as u32;
+								let h = bb.height() as u32;
+								let mut glyph = Glyph::new( codepoint, w, h );
+								maybe_glyph = Some( glyph );								
+							},
+							Some( mut glyph ) => {
+//								println!("Pos {:?}", pos.x );
+								glyph.advance = pos.x as u16;
+								the_font.add_glyph( glyph );
+								break;
+							}
+						}
 						/*
 						pg.draw(|x, y, v| {
 //							glyph.set_pixel( ( bb.min.x+x as i32 ) , ( bb.min.y+y as i32 ), v );
 							glyph.set_pixel( ( x as i32 ) , ( y as i32 ), v );
 						});
 						*/
-						the_font.add_glyph( glyph );
-						break;
+//						the_font.add_glyph( glyph );
+//						break;
 					}
 				}
 			}
