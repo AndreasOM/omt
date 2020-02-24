@@ -38,6 +38,18 @@ fn main() {
 							.help("Set the border size")
 							.takes_value(true)
 						)
+						.arg(Arg::with_name("distancefield-scale")
+							.long("distancefield-scale")
+							.value_name("DISTANCEFIELD-SCALE")
+							.help("Set/enable the distancefield scale")
+							.takes_value(true)
+						)
+						.arg(Arg::with_name("distancefield-max-distance")
+							.long("distancefield-max-distance")
+							.value_name("DISTANCEFIELD-MAX-DISTANCE")
+							.help("Set the distancefield maximum distance")
+							.takes_value(true)
+						)
 						.arg(Arg::with_name("input")
 							.long("input")
 							.value_name("INPUT")
@@ -57,11 +69,13 @@ fn main() {
 					.get_matches();
 
 	if let ("create", Some( sub_matches ) ) = matches.subcommand() {
-		let output	= sub_matches.value_of("output").unwrap_or("output-font").to_string();
-		let texsize = sub_matches.value_of("texsize").unwrap_or("1024").to_string();
-		let size	= sub_matches.value_of("size").unwrap_or("16").to_string();
-		let border	= sub_matches.value_of("border").unwrap_or("0").to_string();
-		let input	= sub_matches.values_of("input").unwrap().collect::<Vec<_>>(); 
+		let output			= sub_matches.value_of("output").unwrap_or("output-font").to_string();
+		let texsize 		= sub_matches.value_of("texsize").unwrap_or("1024").to_string();
+		let size			= sub_matches.value_of("size").unwrap_or("16").to_string();
+		let border			= sub_matches.value_of("border").unwrap_or("0").to_string();
+		let df_scale		= sub_matches.value_of("distancefield-scale").unwrap_or("4").to_string();
+		let df_max_distance	= sub_matches.value_of("distancefield-max-distance").unwrap_or("2").to_string();
+		let input			= sub_matches.values_of("input").unwrap().collect::<Vec<_>>(); 
 
 		let texsize = match u32::from_str_radix( &texsize, 10 ) {
 			Ok( n ) => n,
@@ -87,10 +101,28 @@ fn main() {
 			}
 		};
 
+		let df_scale = match u16::from_str_radix( &df_scale, 10 ) {
+			Ok( n ) => n,
+			x => {
+				println!("Error parsing df_scale {:?} >{}<", x, df_scale );
+				process::exit( -1 );
+			}
+		};
+
+		let df_max_distance = match u16::from_str_radix( &df_max_distance, 10 ) {
+			Ok( n ) => n,
+			x => {
+				println!("Error parsing df_max_distance {:?} >{}<", x, df_max_distance );
+				process::exit( -1 );
+			}
+		};
+
 		println!("output         : {:?}", output );
 		println!("texsize        : {:?}", texsize );
 		println!("size           : {:?}", size );
 		println!("border         : {:?}", border );
+		println!("df_scale  	 : {:?}", df_scale );
+		println!("df_max_distance: {:?}", df_max_distance );
 //		println!("input          : {:?}", input );
 		println!("input          : [" );
 		for i in &input {
@@ -98,7 +130,7 @@ fn main() {
 		}
 		println!("]" );
 
-		match Font::create( &output, texsize, size, border, &input ) {
+		match Font::create( &output, texsize, size, border, df_scale, df_max_distance, &input ) {
 			Ok( 1 ) => {
 				println!("1 font created" );
 				process::exit( 0 );

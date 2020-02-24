@@ -8,6 +8,7 @@ use std::io::{BufReader, Read, Write};
 
 use image::{ DynamicImage, ImageFormat, GenericImage, GenericImageView };
 use rusttype::{point, FontCollection, PositionedGlyph, Scale};
+use distance_field::DistanceFieldExt;
 
 #[derive(Debug,Copy,Clone)]
 pub struct Glyph {
@@ -47,6 +48,9 @@ pub struct Font {
 	texsize:	u32,
 	size:		u32,
 	border:		u32,
+	scale:		u32,
+	distancefield_scale:		u16,
+	distancefield_max_distance:	u16,
 	pub image:	DynamicImage
 }
 
@@ -64,12 +68,24 @@ impl std::fmt::Debug for Font {
 impl Font {
 // 		match Font::create( &output, texsize, size, &input ) {
 
-	fn new( texsize: u32, size: u32, border: u32 ) -> Font {
+	fn new( texsize: u32, size: u32, border: u32, distancefield_scale: u16, distancefield_max_distance: u16 ) -> Font {
+		let scale = if distancefield_scale > 1 {
+			distancefield_scale as u32
+		}
+		else {
+			1
+		};
+
+		let texsize = scale*texsize;
+
 		Font {
 			glyphs: Vec::new(),
 			texsize: texsize,
 			size: size,
 			border: border,
+			scale: scale,
+			distancefield_scale: distancefield_scale,
+			distancefield_max_distance: distancefield_max_distance,
 			image: image::DynamicImage::new_rgba8( texsize, texsize ),			
 		}
 	}
@@ -139,6 +155,9 @@ impl Font {
 			texsize: texsize,
 			size: size,
 			border: border,
+			scale: 1,
+			distancefield_scale: 0,
+			distancefield_max_distance: 2,	// :TODO: fix with new serialization format
 			image: image::DynamicImage::new_rgba8( texsize, texsize ),			
 		};
 		f.load_omfont( fontname );
@@ -189,7 +208,7 @@ impl Font {
 	
 
 	fn blit_glyphs( &mut self, font: rusttype::Font ) -> bool {
-		let scale = Scale::uniform(self.size as f32);
+		let scale = Scale::uniform(self.size as f32 * self.scale as f32 );
 		let start = point(0.0, 0.0 /*+ v_metrics.ascent*/ );
 
 		for g in &mut self.glyphs {
@@ -218,6 +237,59 @@ impl Font {
 		}
 
 		true
+	}
+
+	fn rescale_glyps( &mut self, scale: f32 ) {
+		for g in &mut self.glyphs {
+			g.x = ( g.x as f32 * scale ) as u32;
+			g.y = ( g.y as f32 * scale ) as u32;
+			g.width = ( g.width as f32 * scale ) as u32;
+			g.height = ( g.height as f32 * scale ) as u32;
+			g.advance = ( g.advance as f32 * scale ) as u16;
+		}
+	}
+
+	pub fn convert_to_distancefield( &mut self ) {
+		let scale = self.distancefield_scale;
+
+		if scale == 0 {
+			return;
+		}
+
+		let factor = 1.0 / self.scale as f32;
+		self.rescale_glyps( factor );
+
+		let orig_image = &self.image;
+		let texsize = ( self.texsize as f32 / self.scale as f32 ) as u32;
+		self.texsize = texsize;
+
+		// create df
+
+		println!("Creating distance field ({}x{}) ... this might take a moment", texsize, texsize );
+		let outbuf = orig_image.grayscale().distance_field(distance_field::Options {
+        	size: ( texsize, texsize ),
+        	max_distance: self.distancefield_max_distance,
+        	..Default::default()
+    	});
+    	println!("Distance field created!");
+
+		self.image = image::DynamicImage::new_rgba8( texsize, texsize );
+
+		for y in 0..texsize {
+			for x in 0..texsize {
+				let pixel = outbuf.get_pixel( x, y );
+				let luma = pixel[ 0 ] as f32;
+				let luma = ( 2.0*luma ).min( 255.0 ) as u8;	// :TODO: remove once we switch to new renderer
+				let r = luma;
+				let g = luma;
+				let b = luma;
+				let a = luma;
+
+				let rgba = image::Rgba( [ r, g, b, a ] );
+				self.image.put_pixel( x, y, rgba );
+			}
+		}
+
 	}
 
 	pub fn load( name: &str ) -> Result< Font, OmError > {
@@ -302,7 +374,7 @@ impl Font {
 
 
 	pub fn create(
-		output: &str, texsize: u32, size: u32, border: u32, input: &Vec<&str> 
+		output: &str, texsize: u32, size: u32, border: u32, distancefield_scale: u16, distancefield_max_distance: u16, input: &Vec<&str> 
 	) -> Result<u32, OmError>{
 		// load ttf
 		// :TODO: load all input fonts!
@@ -327,10 +399,18 @@ impl Font {
 		            panic!("error turning FontCollection into a Font: {}", e);
 		        });
 
-		let scale = Scale::uniform(size as f32);
+		let scale_factor = if distancefield_scale > 1 {
+			distancefield_scale
+		}
+		else {
+			1
+		};
+
+		println!("scale_factor {:?}", scale_factor);
+		let scale = Scale::uniform( size as f32 * scale_factor as f32 );
 		let start = point(0.0, 0.0 /*+ v_metrics.ascent*/ );
 
-		let mut the_font = Font::new( texsize, size, border );
+		let mut the_font = Font::new( texsize, size, border, distancefield_scale, distancefield_max_distance );
 		let mut cnt = 0;
 		for c in 0..128u8 {
 			cnt += 1;
@@ -389,8 +469,9 @@ impl Font {
 		if !the_font.blit_glyphs( font ) {
 			return Err( OmError::Generic( "Failed to blitting glyphs into texture".to_string() ) );
 		}
-		println!("the font: {:#?}", the_font );
+//		println!("the font: {:#?}", the_font );
 
+		the_font.convert_to_distancefield( );
 		let filename = format!("{}.png", output );
 		println!("Writing texture to {}", filename );
 		the_font.image.save_with_format( filename, ImageFormat::PNG );

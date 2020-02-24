@@ -6,7 +6,8 @@
 	[x] Generate images for glyphs
 	[x] Put glyphs into "atlas", and then(!) rasterize into image
 	[x] Write data output
-	[ ] Convert glyph pixels to signed distance
+	[x] Convert glyph pixels to signed distance
+	[ ] Try: Convert individual glyphs to signed distance before blitting them into shared texture
 
 # TODO
 
@@ -28,9 +29,9 @@
 
 ## 2020
 
-[x] Extract atlas fitting form atlas builder
-
 ### February
+
+[x] Extract atlas fitting form atlas builder
 
 ### January
 
