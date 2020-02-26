@@ -18,6 +18,8 @@ pub struct Glyph {
 	pub x:			u32,
 	pub y:			u32,
 	pub advance:	u16,
+	pub y_offset:	f32,
+	pub matrix:		[f32;6],
 }
 /*
 impl std::fmt::Debug for Glyph {
@@ -39,8 +41,27 @@ impl Glyph {
 			x: 0,
 			y: 0,
 			advance: 0,
+			y_offset: 0.0,
+			matrix: [0.0;6],
 		}
 	}
+	fn recalc_matrix( &mut self, texsize: u32 ) {
+		let sx = self.x as f32 / texsize as f32;
+		let sy = self.y as f32 / texsize as f32;
+		let scale_x = self.width as f32 / texsize as f32;
+		let scale_y = self.height as f32 / texsize as f32;
+		self.matrix = 		[
+			scale_x, 0.0, sx,
+			0.0, scale_y, sy,
+		];
+	}
+	fn recalc_from_matrix( &mut self, texsize: u32 ) {
+		self.width	= ( self.matrix[ 0*3 + 0 ] * texsize as f32 ).trunc() as u32;
+		self.height	= ( self.matrix[ 1*3 + 1 ] * texsize as f32 ).trunc() as u32;
+		self.x		= ( self.matrix[ 0*3 + 2 ] * texsize as f32 ).trunc() as u32;
+		self.y		= ( self.matrix[ 1*3 + 2 ] * texsize as f32 ).trunc() as u32;
+	}
+
 }
 
 pub struct Font {
@@ -76,6 +97,62 @@ impl Font {
 		}
 	}
 
+	fn recalc_matrix( &mut self, texsize: u32 ) {
+		for g in &mut self.glyphs {
+			g.recalc_matrix( texsize );
+		}
+	}
+
+	fn recalc_from_matrix( &mut self, texsize: u32 ) {
+		for g in &mut self.glyphs {
+			g.recalc_from_matrix( texsize );
+		}
+	}
+
+	fn load_omfont_v2( &mut self, filename: &str ) -> Result< u32, OmError > {
+		let f = match File::open(filename) {
+			Ok( f ) => f,
+			Err( _ ) => return Err(OmError::Generic("io".to_string())),
+		};
+
+		let mut bufreader = BufReader::new( f );
+		let chunk_magic = [ 0x4fu8, 0x4d, 0x46, 0x4f, 0x4e, 0x54, ];
+		for m in &chunk_magic {
+			let b = bufreader.read_u8().unwrap_or( 0 );
+			if b != *m {
+				return Err( OmError::Generic("Broken chunk magic".to_string() ) );
+			}
+		}
+		let version = bufreader.read_u32::<LittleEndian>( ).unwrap_or( 0 );
+		if version != 2 {
+			return Err( OmError::Generic("Unsupported version".to_string() ) );
+		}
+
+		self.size = bufreader.read_u16::<LittleEndian>( ).unwrap_or( 0 ) as u32;
+		let count = bufreader.read_u16::<LittleEndian>( ).unwrap_or( 0 );
+
+		let mut codepoints = Vec::new();
+
+		for c in 0..count {
+			let codepoint = bufreader.read_u32::<LittleEndian>( ).unwrap_or( 0 );
+			codepoints.push( codepoint );
+		}
+
+		for c in 0..count {
+			let codepoint = codepoints[ c as usize ];
+			let mut glyph = Glyph::new( codepoint as u8, 0, 0 );
+			for m in &mut glyph.matrix {
+				*m = bufreader.read_f32::<LittleEndian>().unwrap_or( 0.0 );
+			}
+			glyph.advance = bufreader.read_f32::<LittleEndian>().unwrap_or( 0.0 ) as u16;
+			glyph.y_offset = bufreader.read_f32::<LittleEndian>().unwrap_or( 0.0 );
+
+			self.glyphs.push( glyph );
+		}
+
+		Ok( 0 )
+	}
+
 	fn load_omfont( &mut self, filename: &str ) -> Result< u32, OmError > {
 		let f = match File::open(filename) {
 			Ok( f ) => f,
@@ -108,7 +185,7 @@ impl Font {
 				v_pos[ i*2 + 1 ] = bufreader.read_f32::<LittleEndian>().unwrap_or( 0.0 );
 				v_pos[ i*2 + 2 ] = bufreader.read_f32::<LittleEndian>().unwrap_or( 0.0 );
 			}
-			println!("{:#?}", tex_coords );
+//			println!("{:#?}", tex_coords );
 			let tex_l = tex_coords[ 0*2 + 0 ];
 			let tex_t = tex_coords[ 0*2 + 1 ];
 			let tex_r = tex_coords[ 3*2 + 0 ];
@@ -131,8 +208,7 @@ impl Font {
 		Ok( 0 )
 	}
 
-	fn new_from_omfont( fontname: &str ) -> Font {
-		let texsize = 1024;
+	fn new_from_omfont( fontname: &str, texsize: u32 ) -> Font {
 		let size = 40;
 		let border = 0;
 
@@ -143,7 +219,16 @@ impl Font {
 			border: border,
 			image: image::DynamicImage::new_rgba8( texsize, texsize ),
 		};
-		f.load_omfont( fontname );
+		match f.load_omfont_v2( fontname ) {
+			Ok( _ ) => {
+				// calculate x, y, width, height
+				f.recalc_from_matrix( texsize );
+//				println!("{:#?}", f );
+			},
+			Err( _ ) => {
+				f.load_omfont( fontname );
+			}
+		};
 
 		f
 	}
@@ -273,20 +358,52 @@ impl Font {
 	}
 
 	pub fn load( name: &str ) -> Result< Font, OmError > {
-		let fontname = format!("{}.omfont", name );
-		let mut font = Font::new_from_omfont( &fontname );
-
 		let pngname = format!("{}.png", name );
 		let img = image::open(&pngname).unwrap();
 		if img.dimensions().0 != img.dimensions().1 {
 			println!("Error: Non-square texture for font found with dimensions {:?}", img.dimensions());
 			return Err( OmError::Generic( "Error: Non-square texture for font".to_string() ) )
 		}
+
+		let texsize = img.dimensions().0;
+
+		let fontname = format!("{}.omfont", name );
+		let mut font = Font::new_from_omfont( &fontname, texsize );
+
 		font.image = img;
 
 //		Err( OmError::Generic( "Font::load not implemented".to_string() ) )
 		Ok( font )
 	}
+	fn save_omfont_v2( &self, filename: &str ) -> Result< u32, OmError > {
+		let mut f = match File::create(filename) {
+			Ok( f ) => f,
+			Err( _ ) => return Err(OmError::Generic("io".to_string())),
+		};
+		f.write_all(&[
+			0x4f, 0x4d, 0x46, 0x4f, 0x4e, 0x54,	// OMFONT
+			0x2, 0x00, 0x00, 0x00,				// u32 version
+		]).unwrap();
+
+		f.write_u16::<LittleEndian>( self.size as u16 ).unwrap();
+		f.write_u16::<LittleEndian>( self.glyphs.len() as u16 ).unwrap();
+
+		for g in &self.glyphs {
+			f.write_u32::<LittleEndian>( g.codepoint as u32 ).unwrap();
+		}
+
+		for g in &self.glyphs {
+			let m = g.matrix;
+			for mm in &m {
+				f.write_f32::<LittleEndian>( *mm ).unwrap();
+			}
+			f.write_f32::<LittleEndian>( g.advance as f32 ).unwrap();
+			f.write_f32::<LittleEndian>( g.y_offset as f32 ).unwrap();
+		}
+
+		Ok( 1 )
+	}
+
 	fn save_omfont( &self, filename: &str ) -> Result< u32, OmError > {
 		let mut f = match File::create(filename) {
 			Ok( f ) => f,
@@ -349,7 +466,7 @@ impl Font {
 			f.write_u16::<LittleEndian>( g.advance as u16 ).unwrap();
 		}
 
-		Ok( 0 )
+		Ok( 1 )
 	}
 
 
@@ -408,14 +525,22 @@ impl Font {
 //						println!("bb {:?}", bb );
 						match maybe_glyph {
 							None => {
-								let w = bb.width() as u32 + 2*border;
+								println!("{} -> {:?}", ch, bb );
 								let h = bb.height() as u32 + 2*border;
+								let w = bb.width() as u32 + 2*border;
 								let mut glyph = Glyph::new( codepoint, w, h );
+								let y_offset = bb.max.y as f32;
+								println!("\t{} -> {}", ch, y_offset );
+								glyph.y_offset = y_offset / texsize as f32;
 								maybe_glyph = Some( glyph );								
 							},
 							Some( mut glyph ) => {
+								// second character!
+//								println!("{} -> {:?}", ch, bb );
 //								println!("Pos {:?}", pos.x );
+								// :TODO: use advance_width
 								glyph.advance = pos.x as u16;
+//								let y_offset = 0.5 * glyph.height as f32;
 								the_font.add_glyph( glyph );
 								break;
 							}
@@ -432,6 +557,7 @@ impl Font {
 		if !the_font.blit_glyphs( font, distancefield_scale, distancefield_max_distance ) {
 			return Err( OmError::Generic( "Failed to blitting glyphs into texture".to_string() ) );
 		}
+		the_font.recalc_matrix( texsize );
 //		println!("the font: {:#?}", the_font );
 
 		let filename = format!("{}.png", output );
@@ -440,7 +566,8 @@ impl Font {
 
 		let filename = format!("{}.omfont", output );
 		println!("Writing font data to {}", filename );
-		match the_font.save_omfont( &filename ) {
+//		match the_font.save_omfont( &filename ) {
+		match the_font.save_omfont_v2( &filename ) {
 			Ok( _ ) => {},
 			Err( e ) => { println!("Error writing font data {:?}", e ); },
 		}

@@ -73,7 +73,7 @@ impl DrawBuffer {
 		}
 	}
 
-	fn draw_hline( &mut self, sx: u32, ex: u32, y: u32, col: u32 ) {
+	pub fn draw_hline( &mut self, sx: u32, ex: u32, y: u32, col: u32 ) {
 		// :TODO: clip line
 
 		let w = self.width as usize;

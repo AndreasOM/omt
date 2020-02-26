@@ -1,9 +1,15 @@
 # In Progress
 
 [ ] Create new .omfont format
+	[x] Fix y-offset
+	[x] Fix fixed font texture size handling for previewer
+	[ ] Add loader for new format to omlib
+	[ ] Test new font in Fiiish!
 
 # TODO
 
+[ ] Allow defining of used characters in font
+[ ] Switch font previewer to use matrix for bounding boxes
 [ ] Fix font size setting handling?
 
 [ ] Cleanup font code

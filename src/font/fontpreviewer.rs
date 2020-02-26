@@ -30,7 +30,7 @@ impl FontPreviewer {
 			Ok( f ) => f,
 		};
 
-		println!("{:#?}", font );
+//		println!("{:#?}", font );
 
 		{
 			// display
@@ -98,11 +98,19 @@ impl FontPreviewer {
 				}
 */
 				let m = 0.5 + 0.5 * ( time * 1.5 ).sin();
-				let frame_col = DrawBuffer::mixRgba( 0xffffffff, 0x802080ff, m );
+				let frame_col = DrawBuffer::mixRgba( 0x808080ff, 0x802080ff, m );
+				let baseline_col = DrawBuffer::mixRgba( 0xffffffff, 0xe0e020ff, m );
 				draw_buffer.copy_from_draw_buffer( &img_draw_buffer );
 				for g in &font.glyphs {
 					let bs = ( 5.0 * draw_buffer.get_scale() ).trunc() as u32; 
 					draw_buffer.draw_frame( g.x as i32, g.y as i32, g.width, g.height, frame_col, bs );
+				}
+				for g in &font.glyphs {
+					let bs = ( 2.0 * draw_buffer.get_scale() ).trunc() as u32; 
+					let y_offset = g.y_offset * font.image.dimensions().1 as f32;
+//					println!("{:?}", y_offset);
+					draw_buffer.draw_frame( g.x as i32, g.y as i32, g.width, g.height - y_offset as u32, baseline_col, bs );
+//					draw_buffer.draw_hline( g.x, g.x + g.width, g.y + g.height - y_offset as u32, baseline_col );
 				}
 //			draw_buffer.copy_from_draw_buffer( &img_draw_buffer );
 
