@@ -48,9 +48,6 @@ pub struct Font {
 	texsize:	u32,
 	size:		u32,
 	border:		u32,
-	scale:		u32,
-	distancefield_scale:		u16,
-	distancefield_max_distance:	u16,
 	pub image:	DynamicImage
 }
 
@@ -68,24 +65,13 @@ impl std::fmt::Debug for Font {
 impl Font {
 // 		match Font::create( &output, texsize, size, &input ) {
 
-	fn new( texsize: u32, size: u32, border: u32, distancefield_scale: u16, distancefield_max_distance: u16 ) -> Font {
-		let scale = if distancefield_scale > 1 {
-			distancefield_scale as u32
-		}
-		else {
-			1
-		};
-
-		let texsize = scale*texsize;
+	fn new( texsize: u32, size: u32, border: u32 ) -> Font {
 
 		Font {
 			glyphs: Vec::new(),
 			texsize: texsize,
 			size: size,
 			border: border,
-			scale: scale,
-			distancefield_scale: distancefield_scale,
-			distancefield_max_distance: distancefield_max_distance,
 			image: image::DynamicImage::new_rgba8( texsize, texsize ),			
 		}
 	}
@@ -155,10 +141,7 @@ impl Font {
 			texsize: texsize,
 			size: size,
 			border: border,
-			scale: 1,
-			distancefield_scale: 0,
-			distancefield_max_distance: 2,	// :TODO: fix with new serialization format
-			image: image::DynamicImage::new_rgba8( texsize, texsize ),			
+			image: image::DynamicImage::new_rgba8( texsize, texsize ),
 		};
 		f.load_omfont( fontname );
 
@@ -172,7 +155,7 @@ impl Font {
 		let mut atlas_fitter = AtlasFitter::new();
 
 		for (idx, e ) in self.glyphs.iter().enumerate() {
-			atlas_fitter.add_entry( idx, e.width+ 2*self.border, e.height+ 2*self.border );
+			atlas_fitter.add_entry( idx, e.width, e.height );
 		}
 
 		let pages = atlas_fitter.fit( self.texsize, self.border );
@@ -205,16 +188,32 @@ impl Font {
 		let pixel = image::Rgba([v, v, v, v]);
 		self.image.put_pixel( x, y, pixel );
 	}
+
+	fn blit_image( &mut self, gx: u32, gy: u32, img: &image::DynamicImage ) {
+		let w = img.dimensions().0;
+		let h = img.dimensions().1;
+
+		for y in 0..h {
+			for x in 0..w {
+				let p = img.get_pixel( x, y );
+				let tx = gx + x;
+				let ty = gy + y;
+//				println!("{}, {} + {}, {} = {}, {}", gx, gy, h, w, tx, ty );
+				self.image.put_pixel( tx, ty, p );
+			}
+		}
+	}
 	
 
-	fn blit_glyphs( &mut self, font: rusttype::Font ) -> bool {
-		let scale = Scale::uniform(self.size as f32 * self.scale as f32 );
-		let start = point(0.0, 0.0 /*+ v_metrics.ascent*/ );
+	fn blit_glyphs( &mut self, font: rusttype::Font, distancefield_scale: u16, distancefield_max_distance: u16 ) -> bool {
+		let scale_factor = match distancefield_scale {
+			0 => 1,
+			1 => 1,
+			f => f as u32,
+		};
 
-		for g in &mut self.glyphs {
-			g.x += self.border;
-			g.y += self.border;
-		}
+		let scale = Scale::uniform( ( self.size * scale_factor ) as f32 );
+		let start = point(0.0, 0.0 /*+ v_metrics.ascent*/ );
 
 		let glyphs = self.glyphs.clone(); // needed to avoid borrow problem below :(
 		for g in glyphs {
@@ -225,11 +224,45 @@ impl Font {
 				match pg.pixel_bounding_box() {
 					None => {},
 					Some( bb ) => {
-						let w = bb.width() as u32;
-						let h = bb.height() as u32;
+						let w = bb.width() as u32 + 2*self.border*scale_factor;
+						let h = bb.height() as u32 + 2*self.border*scale_factor;
+						let mut glyph_image = image::DynamicImage::new_rgba8( w, h );
 						pg.draw(|x, y, v| {
-							self.set_pixel( ( ( g.x + x ) as i32 ) , ( ( g.y + y ) as i32 ), v );
+							let v = ( v * 255.0 ) as u8;
+							let pixel = image::Rgba([v, v, v, v]);
+							glyph_image.put_pixel( x + self.border*scale_factor, y + self.border*scale_factor, pixel );
 						});
+
+						//
+						if distancefield_scale >= 1 {
+							// downscale
+							let downscale_factor = 1.0 / distancefield_scale as f32;
+							let w = ( w as f32 * downscale_factor ) as u32;
+							let h = ( h as f32 * downscale_factor ) as u32;
+							let max_distance = distancefield_max_distance as u32 * scale_factor as u32;
+
+							let distance_field = glyph_image.grayscale().distance_field(distance_field::Options {
+								size: ( w, h ),
+								max_distance: max_distance as u16,
+								..Default::default()
+							});
+							glyph_image = image::DynamicImage::new_rgba8( w, h );
+							for y in 0..h {
+								for x in 0..w {
+									let pixel = distance_field.get_pixel( x, y );
+									let luma = pixel[ 0 ];
+									let r = luma;
+									let g = luma;
+									let b = luma;
+									let a = luma;
+
+									let rgba = image::Rgba( [ r, g, b, a ] );
+									glyph_image.put_pixel( x, y, rgba );									
+								}
+							}
+						}
+						self.blit_image( g.x, g.y, &glyph_image );
+
 						break;
 					}
 				}
@@ -237,59 +270,6 @@ impl Font {
 		}
 
 		true
-	}
-
-	fn rescale_glyps( &mut self, scale: f32 ) {
-		for g in &mut self.glyphs {
-			g.x = ( g.x as f32 * scale ) as u32;
-			g.y = ( g.y as f32 * scale ) as u32;
-			g.width = ( g.width as f32 * scale ) as u32;
-			g.height = ( g.height as f32 * scale ) as u32;
-			g.advance = ( g.advance as f32 * scale ) as u16;
-		}
-	}
-
-	pub fn convert_to_distancefield( &mut self ) {
-		let scale = self.distancefield_scale;
-
-		if scale == 0 {
-			return;
-		}
-
-		let factor = 1.0 / self.scale as f32;
-		self.rescale_glyps( factor );
-
-		let orig_image = &self.image;
-		let texsize = ( self.texsize as f32 / self.scale as f32 ) as u32;
-		self.texsize = texsize;
-
-		// create df
-
-		println!("Creating distance field ({}x{}) ... this might take a moment", texsize, texsize );
-		let outbuf = orig_image.grayscale().distance_field(distance_field::Options {
-        	size: ( texsize, texsize ),
-        	max_distance: self.distancefield_max_distance,
-        	..Default::default()
-    	});
-    	println!("Distance field created!");
-
-		self.image = image::DynamicImage::new_rgba8( texsize, texsize );
-
-		for y in 0..texsize {
-			for x in 0..texsize {
-				let pixel = outbuf.get_pixel( x, y );
-				let luma = pixel[ 0 ] as f32;
-				let luma = ( 2.0*luma ).min( 255.0 ) as u8;	// :TODO: remove once we switch to new renderer
-				let r = luma;
-				let g = luma;
-				let b = luma;
-				let a = luma;
-
-				let rgba = image::Rgba( [ r, g, b, a ] );
-				self.image.put_pixel( x, y, rgba );
-			}
-		}
-
 	}
 
 	pub fn load( name: &str ) -> Result< Font, OmError > {
@@ -383,7 +363,6 @@ impl Font {
 			Err( _ ) => return Err(OmError::Generic("io".to_string())),
 		};
 
-//		let mut bufreader = BufReader::new( f );
 		let mut buffer = Vec::new();
 
 	    // read the whole file
@@ -399,18 +378,10 @@ impl Font {
 		            panic!("error turning FontCollection into a Font: {}", e);
 		        });
 
-		let scale_factor = if distancefield_scale > 1 {
-			distancefield_scale
-		}
-		else {
-			1
-		};
-
-		println!("scale_factor {:?}", scale_factor);
-		let scale = Scale::uniform( size as f32 * scale_factor as f32 );
+		let scale = Scale::uniform( size as f32 );	// :TODO: rusttype's understanding of size is different to our's!
 		let start = point(0.0, 0.0 /*+ v_metrics.ascent*/ );
 
-		let mut the_font = Font::new( texsize, size, border, distancefield_scale, distancefield_max_distance );
+		let mut the_font = Font::new( texsize, size, border );
 		let mut cnt = 0;
 		for c in 0..128u8 {
 			cnt += 1;
@@ -437,8 +408,8 @@ impl Font {
 //						println!("bb {:?}", bb );
 						match maybe_glyph {
 							None => {
-								let w = bb.width() as u32;
-								let h = bb.height() as u32;
+								let w = bb.width() as u32 + 2*border;
+								let h = bb.height() as u32 + 2*border;
 								let mut glyph = Glyph::new( codepoint, w, h );
 								maybe_glyph = Some( glyph );								
 							},
@@ -449,14 +420,6 @@ impl Font {
 								break;
 							}
 						}
-						/*
-						pg.draw(|x, y, v| {
-//							glyph.set_pixel( ( bb.min.x+x as i32 ) , ( bb.min.y+y as i32 ), v );
-							glyph.set_pixel( ( x as i32 ) , ( y as i32 ), v );
-						});
-						*/
-//						the_font.add_glyph( glyph );
-//						break;
 					}
 				}
 			}
@@ -466,12 +429,11 @@ impl Font {
 		if !the_font.fit_glyphs() {
 			return Err( OmError::Generic( "Failed to fit glyphs into texture".to_string() ) );
 		}
-		if !the_font.blit_glyphs( font ) {
+		if !the_font.blit_glyphs( font, distancefield_scale, distancefield_max_distance ) {
 			return Err( OmError::Generic( "Failed to blitting glyphs into texture".to_string() ) );
 		}
 //		println!("the font: {:#?}", the_font );
 
-		the_font.convert_to_distancefield( );
 		let filename = format!("{}.png", output );
 		println!("Writing texture to {}", filename );
 		the_font.image.save_with_format( filename, ImageFormat::PNG );
@@ -483,6 +445,6 @@ impl Font {
 			Err( e ) => { println!("Error writing font data {:?}", e ); },
 		}
 
-		Err( OmError::NotImplemented( "Font::create Not implemented".to_string() ) )
+		Ok( 0 )
 	}
 }

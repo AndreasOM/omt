@@ -1,19 +1,10 @@
 # In Progress
 
-
-[ ] Initial version of omt-font
-	[x] Write stub for new command
-	[x] Generate images for glyphs
-	[x] Put glyphs into "atlas", and then(!) rasterize into image
-	[x] Write data output
-	[x] Convert glyph pixels to signed distance
-	[ ] Try: Convert individual glyphs to signed distance before blitting them into shared texture
-
-[ ] Set distance back to 0-255 with 127 for point on edge
-
 [ ] Create new .omfont format
 
 # TODO
+
+[ ] Fix font size setting handling?
 
 [ ] Cleanup font code
 [ ] Cleanup atlas, and remove obsolete fitting leftovers
@@ -36,6 +27,15 @@
 ### February
 
 [x] Extract atlas fitting form atlas builder
+[x] Initial version of omt-font
+	[x] Write stub for new command
+	[x] Generate images for glyphs
+	[x] Put glyphs into "atlas", and then(!) rasterize into image
+	[x] Write data output
+	[x] Convert glyph pixels to signed distance
+	[x] Try: Convert individual glyphs to signed distance before blitting them into shared texture
+
+[x] Set distance back to 0-255 with 127 for point on edge
 
 ### January
 
