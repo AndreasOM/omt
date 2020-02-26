@@ -9,6 +9,10 @@
 	[x] Convert glyph pixels to signed distance
 	[ ] Try: Convert individual glyphs to signed distance before blitting them into shared texture
 
+[ ] Set distance back to 0-255 with 127 for point on edge
+
+[ ] Create new .omfont format
+
 # TODO
 
 [ ] Cleanup font code
