@@ -1,0 +1,8 @@
+tool:    "omt-shader"
+command: "build"
+output:  "${input:basename}"
+input:
+  - "shader-1.fsh"
+parameters: {
+}
+cmd_line: "${tool} ${command} --output ${data_directory}/${output} --input ${input}"

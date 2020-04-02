@@ -156,6 +156,17 @@ impl AssetBuilder{
 							format!("\t\"{}\"", s).clone()
 						).collect::<Vec<_>>().join(" ").to_string()
 					},
+					"input:basename" => {
+						let input = if tool_run.input.len() > 0 {
+							tool_run.input[ 0 ].clone()
+						} else {
+							"".to_string()
+						};
+						match Path::new( &input ).file_name() {
+							Some( basename ) => basename.to_os_string().into_string().unwrap_or( "".to_string() ),
+							None => "".to_string(),
+						} //.unwrap_or("".to_os_string()).to_string()
+					},
 					"data_directory" => self.data_directory.clone(),
 					param => {
 						println!("{:?}", tool_run.parameters.get( param ) );
@@ -174,7 +185,8 @@ impl AssetBuilder{
 	)
 	-> Result<u32,&'static str> {
 		let cmd_line = self.replace_placeholders( &tool_run, &tool_run.cmd_line );
-		println!("Calling\n{}", cmd_line );
+		let cmd_line = self.replace_placeholders( &tool_run, &cmd_line );
+		println!("Calling\n{}\tfor {:#?}", cmd_line, tool_run.input );
 //		let output = Command::new("/bin/sh").args(&["-c", "echo", ""]).output();
 //		let output = Command::new("/bin/sh").args(&["-c", "date", ""]).output();
 		let output = Command::new("/bin/sh").args(&["-c", &cmd_line]).output();
@@ -209,7 +221,7 @@ impl AssetBuilder{
 			// find all asset_config.yaml
 			format!( "{}/**/*.asset_config.yaml", self.content_directory )
 		};
-		
+
 		let mut config_files = Vec::new();
 		for config_file in glob( &config_glob ).expect("Failed glob pattern") {
 			match config_file {

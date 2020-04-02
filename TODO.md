@@ -35,6 +35,7 @@
 [x] Allow runnig exactly one specified asset_config (by passing file to content-directory)
 [x] Added very basic build action to github
 [x] Initial version of omt-shader
+[x] Added input:basename placeholder
 
 ### February
 
