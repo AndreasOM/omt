@@ -5,7 +5,7 @@ use std::fmt;
 use std::fs;
 use std::fs::File;
 use std::io::prelude::*;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process;
 use std::process::Command;
 use yaml_rust::YamlLoader;
@@ -202,9 +202,15 @@ impl AssetBuilder{
 
 		let mut number_of_assets_updated = 0;
 
-		// find all asset_config.yaml
+		// if content_directory is an explicit file only run that // :TODO: and ends in .asset_config.yaml ?
+		let config_glob = if( Path::new( &self.content_directory ).is_file() ) {
+			format!( "{}", self.content_directory )
+		} else {
+			// find all asset_config.yaml
+			format!( "{}/**/*.asset_config.yaml", self.content_directory )
+		};
+		
 		let mut config_files = Vec::new();
-		let config_glob = format!( "{}/**/*.asset_config.yaml", self.content_directory );
 		for config_file in glob( &config_glob ).expect("Failed glob pattern") {
 			match config_file {
 				Err(e) => return Err( "Error finding config" ),
@@ -214,6 +220,7 @@ impl AssetBuilder{
 				},
 			}
 		}
+
 		println!("Found {:?} config files", config_files.len() );
 
 		for config_file in config_files {

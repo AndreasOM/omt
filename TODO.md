@@ -32,6 +32,9 @@
 
 ## 2020
 
+### April
+[ ] Allow runnig exactly one specified asset_config (by passing file to content-directory)
+
 ### February
 
 [x] Extract atlas fitting form atlas builder
