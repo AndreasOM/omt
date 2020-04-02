@@ -108,8 +108,11 @@ impl FontPreviewer {
 				for g in &font.glyphs {
 					let bs = ( 2.0 * draw_buffer.get_scale() ).trunc() as u32; 
 					let y_offset = g.y_offset * font.image.dimensions().1 as f32;
-//					println!("{:?}", y_offset);
-					draw_buffer.draw_frame( g.x as i32, g.y as i32, g.width, g.height - y_offset as u32, baseline_col, bs );
+					println!("{:?} - {:?}", g.height, y_offset);
+					let h = g.height as f32;
+					let h = h - y_offset;
+					let h = h as u32;
+					draw_buffer.draw_frame( g.x as i32, g.y as i32, g.width, h, baseline_col, bs );
 //					draw_buffer.draw_hline( g.x, g.x + g.width, g.y + g.height - y_offset as u32, baseline_col );
 				}
 //			draw_buffer.copy_from_draw_buffer( &img_draw_buffer );

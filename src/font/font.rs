@@ -525,12 +525,12 @@ impl Font {
 //						println!("bb {:?}", bb );
 						match maybe_glyph {
 							None => {
-								println!("{} -> {:?}", ch, bb );
+//								println!("{} -> {:?}", ch, bb );
 								let h = bb.height() as u32 + 2*border;
 								let w = bb.width() as u32 + 2*border;
 								let mut glyph = Glyph::new( codepoint, w, h );
 								let y_offset = bb.max.y as f32;
-								println!("\t{} -> {}", ch, y_offset );
+//								println!("\t{} -> {}", ch, y_offset );
 								glyph.y_offset = y_offset / texsize as f32;
 								maybe_glyph = Some( glyph );								
 							},

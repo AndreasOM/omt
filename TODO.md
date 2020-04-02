@@ -1,10 +1,13 @@
 # In Progress
 
+[ ] Initial version of omt-shader
+
 [ ] Create new .omfont format
 	[x] Fix y-offset
 	[x] Fix fixed font texture size handling for previewer
-	[ ] Add loader for new format to omlib
-	[ ] Test new font in Fiiish!
+	[x] Add loader for new format to omlib
+	[x] Test new font in Fiiish!
+	[ ] Fix scaling issue
 
 # TODO
 
@@ -19,11 +22,10 @@
 [ ] Find solution for fully qualified filename, vs original filename
 [ ] Only build data when content is newer
 
+[ ] Initial version of omt-script
 [ ] Initial version of omt-shape
-[ ] Initial version of omt-shader
 [ ] Initial version of omt-zone 	(! Fiiish! specific)
 [ ] Initial version of omt-config	(! Maybe: Fiiish! specific)
-[ ] Initial version of omt-script
 
 
 # DONE
