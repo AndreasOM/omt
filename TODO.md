@@ -1,6 +1,5 @@
 # In Progress
 
-[ ] Initial version of omt-shader
 
 [ ] Create new .omfont format
 	[x] Fix y-offset
@@ -33,7 +32,9 @@
 ## 2020
 
 ### April
-[ ] Allow runnig exactly one specified asset_config (by passing file to content-directory)
+[x] Allow runnig exactly one specified asset_config (by passing file to content-directory)
+[x] Added very basic build action to github
+[x] Initial version of omt-shader
 
 ### February
 
