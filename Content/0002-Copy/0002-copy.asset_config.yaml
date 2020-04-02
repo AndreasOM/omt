@@ -1,0 +1,10 @@
+tool:    "$asset"
+command: "copy"
+output:  "${input}"
+input:
+  - "3.txt"
+  - "4.txt"
+parameters: {   # :TODO: allow omitting empty parameters
+
+}
+cmd_line: ""    # :TODO: allow omitting empty/unneeded command line
