@@ -41,6 +41,7 @@
 [x] Added globbing to input filename resolution in asset tool
 [x] Allow to combine inputs for tool run
 [x] Abort with error on empty, or broken asset_config
+[x] Added dry-run option to asset tool
 
 ### February
 

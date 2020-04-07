@@ -86,6 +86,7 @@ pub struct AssetBuilder{
 	temp_directory: String,
 	archive: String,
 	paklist: String,
+	dry_run: bool,
 }
 
 impl AssetBuilder{
@@ -95,6 +96,7 @@ impl AssetBuilder{
 		temp_directory: &str,
 		archive: &str,
 		paklist: &str,
+		dry_run: &bool,
 	) -> AssetBuilder {
 		AssetBuilder {
 			content_directory: content_directory.to_string(),
@@ -102,6 +104,7 @@ impl AssetBuilder{
 			temp_directory:    temp_directory.to_string(),
 			archive:           archive.to_string(),
 			paklist:           paklist.to_string(),
+			dry_run:           *dry_run,
 		}
 	}
 
@@ -132,15 +135,19 @@ impl AssetBuilder{
 					let output = self.replace_placeholders( &tool_run, &source_filename );
 					println!("OUTPUT {:?}", output );
 					let dest = format!("{}/{}", self.data_directory, output );
-					match fs::copy( &source, &dest ) {
-						Ok( bytes ) => {
-							println!("📁 🔧 ✅ Copied {:?} bytes from {:?} to {:?}", bytes, &source, &dest);
-							number_of_assets_updated += 1;
-						},
-						Err( e ) => {
-							println!("📁 🔧 ‼️ Error: Copying from {:?} to {:?}", &source, &dest);
-							return Err( "Error while copying" );
-						},
+					if( self.dry_run ) {
+						println!("🌵 Dry Run: Would copy from {:?} to {:?}", &source, &dest );
+					} else {
+						match fs::copy( &source, &dest ) {
+							Ok( bytes ) => {
+								println!("📁 🔧 ✅ Copied {:?} bytes from {:?} to {:?}", bytes, &source, &dest);
+								number_of_assets_updated += 1;
+							},
+							Err( e ) => {
+								println!("📁 🔧 ‼️ Error: Copying from {:?} to {:?}", &source, &dest);
+								return Err( "Error while copying" );
+							},
+						}
 					}
 				}
 				Ok( number_of_assets_updated )
@@ -209,20 +216,25 @@ impl AssetBuilder{
 		println!("Calling\n{}\tfor {:#?}", cmd_line, tool_run.input );
 //		let output = Command::new("/bin/sh").args(&["-c", "echo", ""]).output();
 //		let output = Command::new("/bin/sh").args(&["-c", "date", ""]).output();
+		if( self.dry_run ) {
+			println!("🌵 Dry Run: >{}<", &cmd_line);
+			Ok( 0 )
+		} else {
 		let output = Command::new("/bin/sh").args(&["-c", &cmd_line]).output();
-		match output {
-			Err(e) => Err("Error running external command"),
-			Ok( output ) => {
-				let stdout = String::from_utf8_lossy(&output.stdout);
-				let stderr = String::from_utf8_lossy(&output.stderr);
+			match output {
+				Err(e) => Err("Error running external command"),
+				Ok( output ) => {
+					let stdout = String::from_utf8_lossy(&output.stdout);
+					let stderr = String::from_utf8_lossy(&output.stderr);
 
-				println!("stdout:\n{}", stdout );
-				println!("stderr:\n{}", stderr );
-				println!("return code: {}", output.status.code().unwrap_or(-255));
-				
-				let number_of_assets_updated = 1;
-				Ok( number_of_assets_updated )
-			},
+					println!("stdout:\n{}", stdout );
+					println!("stderr:\n{}", stderr );
+					println!("return code: {}", output.status.code().unwrap_or(-255));
+					
+					let number_of_assets_updated = 1;
+					Ok( number_of_assets_updated )
+				},
+			}
 		}
 	}
 

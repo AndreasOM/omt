@@ -42,6 +42,12 @@ fn main() {
 							.help("Set the pakelist name")
 							.takes_value(true)
 						)
+						.arg(Arg::with_name("dry-run")
+							.long("dry-run")
+							.value_name("dry-run")
+							.help("Enable dry run to show commands without actually running them")
+							.takes_value(false)
+						)
 					)
 					.get_matches();
 
@@ -54,12 +60,14 @@ fn main() {
 		let temp_directory = sub_matches.value_of("temp-directory").unwrap_or(".").to_string();
 		let archive = sub_matches.value_of("archive").unwrap_or("out.omar").to_string();
 		let paklist = sub_matches.value_of("paklist").unwrap_or("").to_string();
+		let dry_run = sub_matches.occurrences_of("dry-run") > 0;
 
 		println!("content_directory: {:?}", content_directory );
 		println!("data_directory   : {:?}", data_directory );
 		println!("temp_directory   : {:?}", temp_directory );
 		println!("archive          : {:?}", archive );
 		println!("paklist          : {:?}", paklist );
+		println!("dry_run          : {:?}", dry_run );
 
 		let asset_builder = AssetBuilder::new(
 			&content_directory,
@@ -67,6 +75,7 @@ fn main() {
 			&temp_directory,
 			&archive,
 			&paklist,
+			&dry_run,
 		);
 
 		match AssetBuilder::build(
