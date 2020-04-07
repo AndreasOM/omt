@@ -261,7 +261,15 @@ impl AssetBuilder{
 			let mut file = File::open( &config_file ).expect( "Failed opening file" );
 			let mut config = String::new();
 			file.read_to_string(&mut config).expect( "Failed reading file" );
-			let yaml = YamlLoader::load_from_str(&config).unwrap();
+			if( config.len() == 0 )
+			{
+				return Err( "Empty config" );
+			}
+			let yaml = match YamlLoader::load_from_str(&config) { //.unwrap();
+				Err( e ) => return Err( "Broken config" ),
+				Ok( yaml ) => yaml,
+			};
+			println!("{:?}", yaml);
 
 			let config_file_path = Path::new(&config_file);
 			let asset_path = config_file_path.parent().unwrap_or( Path::new(".") );

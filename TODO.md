@@ -27,6 +27,7 @@
 [ ] Initial version of omt-config	(! Maybe: Fiiish! specific)
 
 [ ] Untangle the AssetBuilder vs ToolRun mess
+[ ] Improve verification, and error reporting of asset_config.
 
 # DONE
 
@@ -39,6 +40,7 @@
 [x] Added input:basename placeholder
 [x] Added globbing to input filename resolution in asset tool
 [x] Allow to combine inputs for tool run
+[x] Abort with error on empty, or broken asset_config
 
 ### February
 
