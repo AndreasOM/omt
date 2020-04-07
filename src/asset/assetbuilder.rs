@@ -320,7 +320,30 @@ impl AssetBuilder{
 				println!("input     : {:?}", input );
 				println!("parameters: {:?}", parameters );
 */
-				let tool_run = ToolRun::new( &tool, &command, &output, &input, &parameters, &cmd_line );
+				// expand input
+				let mut expanded_input = Vec::new();
+				for i in input.iter() {
+//					expanded_input.push( i.clone() );
+					for exp in glob( &i ).expect("Failed glob pattern") {
+						match exp {
+							Err(e) => return Err( "Error globing input" ),
+							Ok(e) => {
+//								println!("e: {:#?}", e);
+								match e.into_os_string().into_string() {
+									Err(e) => return Err( "Error globing input" ),
+									Ok(e) => {
+//										println!("e: {:#?}", e);
+										expanded_input.push( e );										
+									}
+								}
+							},
+						}
+					}
+				}
+
+				println!("expanded_input: {:#?}", expanded_input );
+
+				let tool_run = ToolRun::new( &tool, &command, &output, &expanded_input, &parameters, &cmd_line );
 				// call tool
 				match tool {
 					""			=> continue,

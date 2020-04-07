@@ -36,6 +36,7 @@
 [x] Added very basic build action to github
 [x] Initial version of omt-shader
 [x] Added input:basename placeholder
+[x] Added globbing to input filename resolution in asset tool
 
 ### February
 
