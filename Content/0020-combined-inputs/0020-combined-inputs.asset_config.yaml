@@ -1,0 +1,8 @@
+tool:    "echo"
+#command: ""
+output:  "${input:basename}"
+combine-inputs: true
+input:
+  - "*.txt"
+
+cmd_line: "${tool} --output ${output} --input ${input}"

@@ -58,6 +58,26 @@ impl ToolRun {
 			cmd_line: cmd_line.to_string(),
 		}
 	}
+	fn run(
+		&self,
+		asset_builder: &AssetBuilder
+	) -> Result<u32,&'static str> {
+		let tool = self.tool.as_str();
+		match tool {
+			""			=> Ok( 0 ),
+			"noop"		=> {
+				println!("NOOP -> Do nothing");
+				Ok( 0 )
+			},
+			"$asset"	=> {
+				println!("$asset command found");
+				asset_builder.tool_asset( &self )
+			},
+			tool		=> {
+				asset_builder.tool_call_external( &self )
+			},
+		}
+	}
 }
 
 pub struct AssetBuilder{
@@ -256,6 +276,8 @@ impl AssetBuilder{
 				let cmd_line = doc["cmd_line"].as_str().unwrap_or("");
 				let mut input = Vec::new();
 
+				let combine_inputs = doc["combine-inputs"].as_bool().unwrap_or(false);
+
 				if doc["input"].is_array() {
 					match doc["input"].as_vec() {
 						None => {},
@@ -341,16 +363,27 @@ impl AssetBuilder{
 					}
 				}
 
-				println!("expanded_input: {:#?}", expanded_input );
+//				println!("expanded_input: {:#?}", expanded_input );
 
-				let tool_run = ToolRun::new( &tool, &command, &output, &expanded_input, &parameters, &cmd_line );
-				// call tool
-				match tool {
-					""			=> continue,
-					"noop"		=> println!("NOOP -> Do nothing"),
-					"$asset"	=> {
-						println!("$asset command found");
-						match self.tool_asset( &tool_run ) {
+				// run once, or multiple times
+				if( combine_inputs ) {
+					let tool_run = ToolRun::new( &tool, &command, &output, &expanded_input, &parameters, &cmd_line );
+					// call tool
+					match tool_run.run( &self ) {
+						Ok( n ) => {
+							number_of_assets_updated += n;
+						},
+						Err( e ) => {
+
+						}
+					}
+				} else {
+					for input in expanded_input.iter() {
+						let mut single_input = Vec::new();
+						single_input.push( input.clone() );
+						let tool_run = ToolRun::new( &tool, &command, &output, &single_input, &parameters, &cmd_line );
+						// call tool
+						match tool_run.run( &self ) {
 							Ok( n ) => {
 								number_of_assets_updated += n;
 							},
@@ -359,17 +392,8 @@ impl AssetBuilder{
 							}
 						}
 					}
-					tool		=> {
-						match self.tool_call_external( &tool_run ) {
-							Ok( n ) => {
-								number_of_assets_updated += n;
-							},
-							Err( e ) => {
-
-							}							
-						}
-					},
 				}
+
 			}
 		}
 

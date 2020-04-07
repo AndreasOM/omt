@@ -26,6 +26,7 @@
 [ ] Initial version of omt-zone 	(! Fiiish! specific)
 [ ] Initial version of omt-config	(! Maybe: Fiiish! specific)
 
+[ ] Untangle the AssetBuilder vs ToolRun mess
 
 # DONE
 
@@ -37,6 +38,7 @@
 [x] Initial version of omt-shader
 [x] Added input:basename placeholder
 [x] Added globbing to input filename resolution in asset tool
+[x] Allow to combine inputs for tool run
 
 ### February
 
