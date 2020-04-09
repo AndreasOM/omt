@@ -35,6 +35,8 @@
 
 [ ] Print help when called without any parameters
 
+[ ] Asset tool needs to update paklist
+
 # DONE
 
 ## 2020
