@@ -28,6 +28,7 @@
 
 [ ] Untangle the AssetBuilder vs ToolRun mess
 [ ] Improve verification, and error reporting of asset_config.
+[ ] Improve README
 
 # DONE
 
