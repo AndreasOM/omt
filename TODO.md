@@ -1,6 +1,8 @@
 # In Progress
 
 
+# Suspended
+
 [ ] Create new .omfont format
 	[x] Fix y-offset
 	[x] Fix fixed font texture size handling for previewer
@@ -9,6 +11,8 @@
 	[ ] Fix scaling issue
 
 # TODO
+
+[ ] Initial version of omt-shape
 
 [ ] Allow defining of used characters in font
 [ ] Switch font previewer to use matrix for bounding boxes
@@ -21,14 +25,15 @@
 [ ] Find solution for fully qualified filename, vs original filename
 [ ] Only build data when content is newer
 
-[ ] Initial version of omt-script
-[ ] Initial version of omt-shape
 [ ] Initial version of omt-zone 	(! Fiiish! specific)
 [ ] Initial version of omt-config	(! Maybe: Fiiish! specific)
 
+[ ] Use return codes from tools when called from asset tool
 [ ] Untangle the AssetBuilder vs ToolRun mess
 [ ] Improve verification, and error reporting of asset_config.
 [ ] Improve README
+
+[ ] Print help when called without any parameters
 
 # DONE
 
@@ -43,6 +48,7 @@
 [x] Allow to combine inputs for tool run
 [x] Abort with error on empty, or broken asset_config
 [x] Added dry-run option to asset tool
+[x] Initial version of omt-script
 
 ### February
 

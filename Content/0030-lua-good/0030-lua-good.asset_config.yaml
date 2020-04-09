@@ -1,0 +1,8 @@
+tool:    "omt-script"
+command: "build"
+output:  "${input:basename}"
+combine-inputs: false
+input:
+  - "*.lua"
+
+cmd_line: "${tool} ${command} --mode copy --output ${data_directory}/${output} --input ${input}"
