@@ -12,6 +12,13 @@
 
 # TODO
 
+[ ] omt-xcassets: Fix filter
+[ ] omt-xcassets: Implement mode fill
+[ ] omt-xcassets: Implement mode update
+[ ] omt-xcassets: Finalize command line interface
+
+
+
 [ ] Initial version of omt-shape
 
 [ ] Allow defining of used characters in font

@@ -7,3 +7,4 @@ pub mod script;
 pub mod shader;
 pub mod soundbank;
 pub mod util;
+pub mod xcassets;
