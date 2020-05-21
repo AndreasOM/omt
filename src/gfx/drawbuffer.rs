@@ -181,6 +181,7 @@ impl DrawBuffer {
 		&self.data
 	}
 
+	/// blends a over b with f percent
 	pub fn mix_rgba( a: u32, b: u32, f: f32 ) -> u32 {
 		let ra = ( ( a >> 24 )&0x000000ff ) as u8;
 		let ga = ( ( a >> 16 )&0x000000ff ) as u8;
@@ -212,4 +213,3 @@ impl DrawBuffer {
 	}
 
 }
-
