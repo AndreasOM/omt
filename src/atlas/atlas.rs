@@ -110,43 +110,6 @@ fn simple_format_u32( f: &str, n: u32 ) -> String {
 
 	s.to_string()
 }
-#[derive(Debug)]
-struct Row {
-	y: u32,			// start of row
-	width: u32,
-	height: u32,
-	end_x: u32, 	// current end of row
-}
-
-impl Row {
-	fn new( y: u32, width: u32, height: u32 ) -> Row {
-		Row {
-			y: y,
-			width: width,
-			height: height,
-			end_x: 0
-		}
-	}
-
-	fn would_fit( &self, w: u32, h: u32 ) -> bool {
-		if self.height >= h {
-			let available_space = self.width - self.end_x;
-			if available_space >= w {
-				true
-			} else {
-				// not enough space
-//				println!("Row {:?} not enough space for {:?}", self, w );
-				false
-			}
-
-		} else {
-			// not high enough
-//			println!("Row {:?} not high enough for {:?}", self, h );
-			false
-		}
-	}
-}
-
 
 //#[derive()]
 pub struct Atlas {
@@ -154,8 +117,6 @@ pub struct Atlas {
 	border: u32,
 	pub entries: Vec<Entry>,
 	pub image: Option<DynamicImage>,
-	rows: Vec<Row>,
-	used_height: u32,
 	atlas_filename: Option<String>,
 	image_filename: Option<String>,
 }
@@ -178,8 +139,6 @@ impl Atlas {
 			border: border,
 			entries: Vec::new(),
 			image: Some( image::DynamicImage::new_rgba8(size, size) ),
-			rows: Vec::new(),
-			used_height: 0,
 			atlas_filename: None,
 			image_filename: None,
 		}
@@ -211,8 +170,6 @@ impl Atlas {
 			border: 0,
 			entries: Vec::new(),
 			image: None,
-			rows: Vec::new(),
-			used_height: 0,
 			atlas_filename: Some( atlasname.to_string() ),
 			image_filename: None,
 		};
@@ -479,7 +436,7 @@ impl Atlas {
 			let mut a = Atlas::new( size, border );
 			for e in &p.entries {
 				println!("{:#?}", e );
-				let mut entry = &entries[ e.id ];
+				let entry = &entries[ e.id ];
 				let mut entry = entry.clone();
 				entry.set_position( e.x, e.y );
 				println!("{:#?}", entry );

@@ -1,4 +1,4 @@
-use crc::{crc32, Hasher32};
+use crc::crc32;
 
 pub struct CrcHelper {
 

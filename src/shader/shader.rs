@@ -12,7 +12,7 @@ impl Shader {
 
 	pub fn build(
 		input: &str,
-		mode: &str,
+		_mode: &str,		// :TODO:
 		output: &str
 	) -> Result<u32, OmError>{
 

@@ -3,7 +3,7 @@ use crate::xcassets::appiconset::AppIconSet;
 
 use std::fs::File;
 
-use resize::{resize, Pixel, Type};
+use resize::{Pixel, Type};
 
 pub struct Xcassets {
 
@@ -39,17 +39,17 @@ impl Xcassets {
 		let basename = "icon";
 		let suffix = ".png";
 
-		let mut numberOfChanges = 0;
+		let mut number_of_changes = 0;
 		let force = mode == "force";
 		for mut ie in app_icon_set.images.iter_mut() {
 //			println!("{:?}", ie );
-			let mut doUpdate = force;
-			if !doUpdate {
+			let do_update = force;
+			if !do_update {
 				// :TODO: check fill
 				// :TODO: check update
 			}
 
-			if doUpdate {
+			if do_update {
 				// figure out size
 				let scale = match &ie.scale[..] {
 					"1x" => 1.0,
@@ -100,15 +100,18 @@ impl Xcassets {
 //    			encoder.write_header().unwrap().write_image_data(&src).unwrap();
 
 				ie.filename = Some(name);
-				numberOfChanges += 1;
+				number_of_changes += 1;
 			}
 		}
 
-		if numberOfChanges > 0 {
+		if number_of_changes > 0 {
 //			println!("{:#?}", app_icon_set);
-			app_icon_set.save( &content_json_filename );
+			match app_icon_set.save( &content_json_filename ) {
+				Ok( _ ) => {},
+				Err( _e ) => return Err( OmError::Generic("Error saving app icon set".to_string()) ),
+			}
 		}
 
-		Ok( numberOfChanges )
+		Ok( number_of_changes )
 	}
 }

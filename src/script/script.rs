@@ -12,7 +12,7 @@ impl Script {
 
 	pub fn build(
 		input: &str,
-		mode: &str,
+		_mode: &str,
 		output: &str
 	) -> Result<u32, OmError>{
 		let data = match fs::read_to_string(input) {
@@ -32,12 +32,12 @@ impl Script {
 //		println!( "{:?}", r );
 
 		match r {
-			Ok(f) => {
+			Ok( _f ) => {
 				println!("Writing lua to {}", output);
 				fs::write(output, data).expect("// Unable to write file");
 				return Ok( 1 );
 			}
-			Err( e ) => {
+			Err( _e ) => {
 				return Err(OmError::Generic("Error in script".to_string()));
 			}
 		};

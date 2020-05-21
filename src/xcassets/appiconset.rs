@@ -37,7 +37,7 @@ impl AppIconSet {
 			Err( _ ) => return Err( AppIconSetError::LoadError ),
 		};
 
-		let appIconSet: AppIconSet = match serde_json::from_str( &json ) {
+		let app_icon_set: AppIconSet = match serde_json::from_str( &json ) {
 			Ok( ais ) => ais,
 			Err( e ) => {
 				println!("ERROR: serde_json::from_str failed with {:?}", e);
@@ -48,7 +48,7 @@ impl AppIconSet {
 
 //		println!("{:#?}", appIconSet);
 
-		Ok( appIconSet )
+		Ok( app_icon_set )
 	}
 
 	pub fn save( 

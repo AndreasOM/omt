@@ -1,11 +1,10 @@
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 
-use crc::{crc32, Hasher32};
+use crc::crc32;
 
 use std::fs;
 use std::fs::File;
 use std::io::{BufRead, BufReader, Read, Write};
-use std::process;
 use std::string::String;
 
 #[derive(Debug)]
@@ -78,6 +77,8 @@ impl Entry {
 		true
 	}
 
+
+  	#[allow(dead_code)]
 	fn display(&self) {
 		println!("Displaying Entry for filename {:?}", self.filename );
 		print!("{:?}\n", self);
@@ -140,7 +141,7 @@ impl Archive {
 			2,							// version
 			flags,						// flags
 			0, 0,						// reserved
-		]);
+		]).unwrap();
 		output_file.write_u32::<LittleEndian>( number_of_files ).unwrap();
 
 		// write the directory
@@ -167,8 +168,8 @@ impl Archive {
 				Err( _e ) => return Err("Error reading data file"),
 			};
 			let mut buffer = Vec::<u8>::new();
-			data_file.read_to_end(&mut buffer);
-			output_file.write_all( &buffer );
+			data_file.read_to_end(&mut buffer).unwrap();
+			output_file.write_all( &buffer ).unwrap();
 		}
 
 		Ok(number_of_files)
@@ -189,24 +190,24 @@ impl Archive {
 		let magic = [ 0x4fu8, 0x4d, 0x41, 0x52 ];
 		for m in &magic {
 			let b = bufreader.read_u8().unwrap_or( 0 );
-			if( b != *m ) {
+			if b != *m {
 				return Err( "Broken magic" );
 			}
 		}
 
 		let v = bufreader.read_u8().unwrap_or( 0 );
-		if( v != 2 ) {
+		if v != 2 {
 			return Err( "Wrong version" );
 		}
 
 		let flags = bufreader.read_u8().unwrap_or( 0 );
-		if( flags != 0 ) {
+		if flags != 0 {
 			return Err( ":TODO: Flags not implemented" );
 		}
 
-		for reserved in 0..2 {
+		for _reserved in 0..2 {
 			let r = bufreader.read_u8().unwrap_or( 0 );
-			if( r != 0 ) {
+			if r != 0 {
 				return Err( ":TODO: Reserved field not zero" );
 			}
 		}
@@ -214,7 +215,7 @@ impl Archive {
 		let number_of_files = bufreader.read_u32::<LittleEndian>().unwrap_or( 0 );
 		println!("Reading {:?} files from archive", number_of_files );
 
-		for e in 0..number_of_files {
+		for _e in 0..number_of_files {
 			let crc = bufreader.read_u32::<LittleEndian>().unwrap_or( 0 );
 			let pos = bufreader.read_u32::<LittleEndian>().unwrap_or( 0 );
 			let size = bufreader.read_u32::<LittleEndian>().unwrap_or( 0 );
@@ -222,8 +223,7 @@ impl Archive {
 		}
 
 		let mut data = Vec::new();
-		bufreader.read_to_end(&mut data);
-		let mut pos = 0;
+		bufreader.read_to_end(&mut data).unwrap();
 		for entry in &mut self.entries {
 			(*entry).load_from_archive( &data );
 		}
@@ -243,7 +243,7 @@ impl Archive {
 				Err( _e ) => return Err("Error writing file"),
 			};
 
-			output_file.write_all( &entry.data );
+			output_file.write_all( &entry.data ).unwrap();
 		}
 		Ok(0)
 	}
@@ -300,20 +300,20 @@ impl Packer {
 	) -> Result<u32,&'static str> {
 
 		let metadata = match fs::metadata(targetpath) {
-			Err( err ) => return Err( "Targetpath not found" ), // :TODO: implement
+			Err( _err ) => return Err( "Targetpath not found" ), // :TODO: implement
 			Ok( md ) => md,
 		};
 
-		if( !metadata.is_dir() ) {
+		if !metadata.is_dir() {
 			return Err( "Targetpath is not a directory" );
 		}
 
 		let metadata = match fs::metadata(input) {
-			Err( err ) => return Err( "Input not found" ),
+			Err( _err ) => return Err( "Input not found" ),
 			Ok( md ) => md,
 		};
 
-		if( !metadata.is_file() ) {
+		if !metadata.is_file() {
 			return Err( "Input is not a file" );
 		}
 
@@ -325,7 +325,7 @@ impl Packer {
 			},
 			Ok( _ ) => {},
 		};
-		archive.unpack( targetpath );
+		archive.unpack( targetpath ).unwrap();
 
 		Ok(0)
 	}

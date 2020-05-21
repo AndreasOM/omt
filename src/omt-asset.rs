@@ -2,7 +2,6 @@ use clap::{Arg, App, SubCommand};
 use std::process;
 
 use omt::asset::AssetBuilder;
-use omt::util::OmError;
 
 fn main() {
 // omt-asset build --content-directory Content --temp-directory Temp --data-directory Data --archive App/data/base.omar --paklist Data/data.paklist

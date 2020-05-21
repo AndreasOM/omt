@@ -2,7 +2,6 @@ use clap::{Arg, App, SubCommand};
 use std::process;
 
 use omt::xcassets::Xcassets;
-use omt::util::OmError;
 
 fn main() {
 	let matches = App::new("omt-xcassets")

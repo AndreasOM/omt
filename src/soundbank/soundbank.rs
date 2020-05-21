@@ -1,8 +1,7 @@
 use crate::util::OmError;
-use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
+use byteorder::{LittleEndian, WriteBytesExt};
 use std::fs::File;
-use std::io::{BufReader, Read, Write};
-use std::path::Path;
+use std::io::Write;
 use std::str::FromStr;
 
 use crate::util::{CrcHelper,FileHelper};
@@ -80,7 +79,7 @@ impl Soundbank {
 // tmp += [ sound[ 1 ], sound[ 2 ], sound[ 3 ], sound[ 4 ], sound[ 5 ] ].pack( 'La32SSL' )
 // # uint32, string 32, uint16, uint16, uint32 - native order
 			
-			f.write_u32::<LittleEndian>( e.id_crc );
+			f.write_u32::<LittleEndian>( e.id_crc ).unwrap();
 			let n = &e.filename;
 			let mut c = 0;
 			for nn in n.as_bytes() {
@@ -91,18 +90,18 @@ impl Soundbank {
 				f.write_u8( 0 ).unwrap();
 				c += 1;
 			}
-			f.write_u16::<LittleEndian>( e.max_instances );
+			f.write_u16::<LittleEndian>( e.max_instances ).unwrap();
 			let drop_mode_u16 = match e.drop_mode {
 				DropMode::Drop => 1,
 				DropMode::Oldest => 0,
 			};
-			f.write_u16::<LittleEndian>( drop_mode_u16 );
+			f.write_u16::<LittleEndian>( drop_mode_u16 ).unwrap();
 
 			let mut flags = 0;
 			if e.do_loop {
 				flags |= 0x01;
 			}			
-			f.write_u32::<LittleEndian>( flags );
+			f.write_u32::<LittleEndian>( flags ).unwrap();
 		}
 		Ok( 0 )
 	}
@@ -112,23 +111,23 @@ impl Soundbank {
 			Ok( f ) => f,
 			Err( _ ) => return Err(OmError::Generic("io".to_string())),
 		};
-		write!( &mut f, "#pragma once\n" );
-		write!( &mut f, "namespace om\n{{\n" );
+		write!( &mut f, "#pragma once\n" ).unwrap();
+		write!( &mut f, "namespace om\n{{\n" ).unwrap();
 
-		write!( &mut f, "\t#if !defined( SOUNDBANK_DEFINES )\n" );
-		write!( &mut f, "\t\t#define SOUNDBANK_DEFINES\n" );
-		write!( &mut f, "\t\tenum SoundBankLoopMode\n" );
-		write!( &mut f, "\t\t{{\n" );
-		write!( &mut f, "\t\t\tOldest = 0,\n" );
-		write!( &mut f, "\t\t\tDrop   = 1,\n" );
-		write!( &mut f, "\t\t}};\n" );
-		write!( &mut f, "\t\t#define SOUNDBANK_ENTRY_LOOP_BIT 1\n" );
-		write!( &mut f, "\t#endif\n" );
+		write!( &mut f, "\t#if !defined( SOUNDBANK_DEFINES )\n" ).unwrap();
+		write!( &mut f, "\t\t#define SOUNDBANK_DEFINES\n" ).unwrap();
+		write!( &mut f, "\t\tenum SoundBankLoopMode\n" ).unwrap();
+		write!( &mut f, "\t\t{{\n" ).unwrap();
+		write!( &mut f, "\t\t\tOldest = 0,\n" ).unwrap();
+		write!( &mut f, "\t\t\tDrop   = 1,\n" ).unwrap();
+		write!( &mut f, "\t\t}};\n" ).unwrap();
+		write!( &mut f, "\t\t#define SOUNDBANK_ENTRY_LOOP_BIT 1\n" ).unwrap();
+		write!( &mut f, "\t#endif\n" ).unwrap();
 
 		for e in &self.entries {
-			write!( &mut f, "\t#define CRC_{:} 0x{:x}\n", e.id, e.id_crc );
+			write!( &mut f, "\t#define CRC_{:} 0x{:x}\n", e.id, e.id_crc ).unwrap();
 		}
-		write!( &mut f, "}} // namespace om\n" );
+		write!( &mut f, "}} // namespace om\n" ).unwrap();
 		Ok( 0 )
 	}
 
@@ -181,7 +180,11 @@ impl Soundbank {
 
 		println!("{:#?}", soundbank );
 
-		soundbank.save_sbk( output );
+		match soundbank.save_sbk( output ) {
+			Ok( _ ) => {},
+			Err( e ) => return Err( e ),
+		};
+		
 		if header.len() > 0 {
 			match soundbank.save_header( header ) {
 				Err( e ) => return Err( e ),

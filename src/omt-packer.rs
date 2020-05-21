@@ -2,7 +2,6 @@ use clap::{Arg, App, SubCommand};
 use std::process;
 
 use omt::packer::Packer;
-use omt::util::OmError;
 
 fn main() {
 	let matches = App::new("omt-packer")

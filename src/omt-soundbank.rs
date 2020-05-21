@@ -2,7 +2,6 @@ use clap::{Arg, App, SubCommand};
 use std::process;
 
 use omt::soundbank::Soundbank;
-use omt::util::OmError;
 
 fn main() {
 // omt-soundbank convert --input Data/test.soundbank --output Data/test.sbk --header Data/test_sound.h

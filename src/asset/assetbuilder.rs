@@ -5,8 +5,7 @@ use std::fmt;
 use std::fs;
 use std::fs::File;
 use std::io::prelude::*;
-use std::path::{Path, PathBuf};
-use std::process;
+use std::path::Path;
 use std::process::Command;
 use yaml_rust::YamlLoader;
 use yaml_rust::Yaml;
@@ -73,7 +72,7 @@ impl ToolRun {
 				println!("$asset command found");
 				asset_builder.tool_asset( &self )
 			},
-			tool		=> {
+			_tool		=> {
 				asset_builder.tool_call_external( &self )
 			},
 		}
@@ -83,9 +82,9 @@ impl ToolRun {
 pub struct AssetBuilder{
 	content_directory: String,
 	data_directory: String,
-	temp_directory: String,
-	archive: String,
-	paklist: String,
+	_temp_directory: String,
+	_archive: String,
+	_paklist: String,
 	dry_run: bool,
 }
 
@@ -101,9 +100,9 @@ impl AssetBuilder{
 		AssetBuilder {
 			content_directory: content_directory.to_string(),
 			data_directory:    data_directory.to_string(),
-			temp_directory:    temp_directory.to_string(),
-			archive:           archive.to_string(),
-			paklist:           paklist.to_string(),
+			_temp_directory:    temp_directory.to_string(),
+			_archive:           archive.to_string(),
+			_paklist:           paklist.to_string(),
 			dry_run:           *dry_run,
 		}
 	}
@@ -135,7 +134,7 @@ impl AssetBuilder{
 					let output = self.replace_placeholders( &tool_run, &source_filename );
 					println!("OUTPUT {:?}", output );
 					let dest = format!("{}/{}", self.data_directory, output );
-					if( self.dry_run ) {
+					if self.dry_run {
 						println!("🌵 Dry Run: Would copy from {:?} to {:?}", &source, &dest );
 					} else {
 						match fs::copy( &source, &dest ) {
@@ -143,7 +142,7 @@ impl AssetBuilder{
 								println!("📁 🔧 ✅ Copied {:?} bytes from {:?} to {:?}", bytes, &source, &dest);
 								number_of_assets_updated += 1;
 							},
-							Err( e ) => {
+							Err( _e ) => {
 								println!("📁 🔧 ‼️ Error: Copying from {:?} to {:?}", &source, &dest);
 								return Err( "Error while copying" );
 							},
@@ -216,13 +215,13 @@ impl AssetBuilder{
 		println!("Calling\n{}\tfor {:#?}", cmd_line, tool_run.input );
 //		let output = Command::new("/bin/sh").args(&["-c", "echo", ""]).output();
 //		let output = Command::new("/bin/sh").args(&["-c", "date", ""]).output();
-		if( self.dry_run ) {
+		if self.dry_run {
 			println!("🌵 Dry Run: >{}<", &cmd_line);
 			Ok( 0 )
 		} else {
 		let output = Command::new("/bin/sh").args(&["-c", &cmd_line]).output();
 			match output {
-				Err(e) => Err("Error running external command"),
+				Err( _e ) => Err("Error running external command"),
 				Ok( output ) => {
 					let stdout = String::from_utf8_lossy(&output.stdout);
 					let stderr = String::from_utf8_lossy(&output.stderr);
@@ -247,7 +246,7 @@ impl AssetBuilder{
 		let mut number_of_assets_updated = 0;
 
 		// if content_directory is an explicit file only run that // :TODO: and ends in .asset_config.yaml ?
-		let config_glob = if( Path::new( &self.content_directory ).is_file() ) {
+		let config_glob = if Path::new( &self.content_directory ).is_file() {
 			format!( "{}", self.content_directory )
 		} else {
 			// find all asset_config.yaml
@@ -257,7 +256,7 @@ impl AssetBuilder{
 		let mut config_files = Vec::new();
 		for config_file in glob( &config_glob ).expect("Failed glob pattern") {
 			match config_file {
-				Err(e) => return Err( "Error finding config" ),
+				Err( _e ) => return Err( "Error finding config" ),
 				Ok(config_file) => {
 //					println!("Config file: {:?}", config_file );
 					config_files.push( config_file );
@@ -273,12 +272,11 @@ impl AssetBuilder{
 			let mut file = File::open( &config_file ).expect( "Failed opening file" );
 			let mut config = String::new();
 			file.read_to_string(&mut config).expect( "Failed reading file" );
-			if( config.len() == 0 )
-			{
+			if config.len() == 0 {
 				return Err( "Empty config" );
 			}
 			let yaml = match YamlLoader::load_from_str(&config) { //.unwrap();
-				Err( e ) => return Err( "Broken config" ),
+				Err( _e ) => return Err( "Broken config" ),
 				Ok( yaml ) => yaml,
 			};
 			println!("{:?}", yaml);
@@ -320,7 +318,7 @@ impl AssetBuilder{
 				}
 
 //				println!("INPUT {:?}", input );
-				let input_original = input.iter().map( |i| {
+				let _input_original = input.iter().map( |i| {
 					format!( "{}", i )
 				}).collect::<Vec<_>>();
 				let input = input.iter().map( |i| {
@@ -368,11 +366,11 @@ impl AssetBuilder{
 //					expanded_input.push( i.clone() );
 					for exp in glob( &i ).expect("Failed glob pattern") {
 						match exp {
-							Err(e) => return Err( "Error globing input" ),
+							Err( _e ) => return Err( "Error globing input" ),
 							Ok(e) => {
 //								println!("e: {:#?}", e);
 								match e.into_os_string().into_string() {
-									Err(e) => return Err( "Error globing input" ),
+									Err( _e ) => return Err( "Error globing input" ),
 									Ok(e) => {
 //										println!("e: {:#?}", e);
 										expanded_input.push( e );										
@@ -386,14 +384,14 @@ impl AssetBuilder{
 //				println!("expanded_input: {:#?}", expanded_input );
 
 				// run once, or multiple times
-				if( combine_inputs ) {
+				if combine_inputs {
 					let tool_run = ToolRun::new( &tool, &command, &output, &expanded_input, &parameters, &cmd_line );
 					// call tool
 					match tool_run.run( &self ) {
 						Ok( n ) => {
 							number_of_assets_updated += n;
 						},
-						Err( e ) => {
+						Err( _e ) => {
 
 						}
 					}
@@ -407,7 +405,7 @@ impl AssetBuilder{
 							Ok( n ) => {
 								number_of_assets_updated += n;
 							},
-							Err( e ) => {
+							Err( _e ) => {
 
 							}
 						}

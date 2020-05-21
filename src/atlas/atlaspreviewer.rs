@@ -3,9 +3,9 @@ use crate::util::OmError;
 use crate::atlas::Atlas;
 use crate::gfx::DrawBuffer;
 
-use image::{ DynamicImage, ImageFormat, GenericImage, GenericImageView };
+use image::GenericImageView;
 use minifb::{Key, Window, WindowOptions};
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::SystemTime;
 
 pub struct AtlasPreviewer {
 
@@ -14,7 +14,7 @@ pub struct AtlasPreviewer {
 const SIZE: usize = 1024;
 const WIDTH: usize = SIZE;
 const HEIGHT: usize = SIZE;
-const GRID_SIZE: usize = 64;
+//const GRID_SIZE: usize = 64;
 impl AtlasPreviewer {
 
 	pub fn preview(
@@ -22,8 +22,8 @@ impl AtlasPreviewer {
 	) -> Result<u32,OmError>{
 
 		let start_time = SystemTime::now();
-		let mut scale = 1.0;
-		let mut frame_col: u32 = 0xa020a0ff;
+		let mut scale;// = 1.0;
+//		let mut frame_col: u32 = 0xa020a0ff;
 
 		let atlases = Atlas::all_for_template( &input );
 //		println!("{:?}", atlases );
@@ -33,7 +33,7 @@ impl AtlasPreviewer {
 			Err(OmError::Generic("No matching atlas found.".to_string()))
 		} else {
 			let mut prev_active_atlas = 0xffffffff;
-			let mut active_atlas = 0;
+			let active_atlas = 0; // :TODO make mut once we allow atlas switching
 
 			// display
 
@@ -75,7 +75,7 @@ impl AtlasPreviewer {
 								},
 								Some( i ) => {
 									// :TODO: calculate best scale
-									scale = 0.5;
+//									scale = 0.5;
 
 									// assumption texture is square
 									let is = i.dimensions().0 as f32;
@@ -92,7 +92,7 @@ impl AtlasPreviewer {
 				}
 
 				let m = 0.5 + 0.5 * ( time * 1.5 ).sin();
-				let frame_col = DrawBuffer::mixRgba( 0xffffffff, 0x802080ff, m );
+				let frame_col = DrawBuffer::mix_rgba( 0xffffffff, 0x802080ff, m );
 				match atlases.get( active_atlas ) {
 					None => {},
 					Some( a ) => {

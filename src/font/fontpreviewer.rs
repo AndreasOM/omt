@@ -3,9 +3,9 @@ use crate::util::OmError;
 use crate::font::Font;
 use crate::gfx::DrawBuffer;
 
-use image::{ DynamicImage, ImageFormat, GenericImage, GenericImageView };
+use image::GenericImageView;
 use minifb::{Key, Window, WindowOptions};
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::SystemTime;
 
 pub struct FontPreviewer {
 
@@ -14,7 +14,7 @@ pub struct FontPreviewer {
 const SIZE: usize = 1024;
 const WIDTH: usize = SIZE;
 const HEIGHT: usize = SIZE;
-const GRID_SIZE: usize = 64;
+//const GRID_SIZE: usize = 64;
 impl FontPreviewer {
 
 	pub fn preview(
@@ -22,8 +22,8 @@ impl FontPreviewer {
 	) -> Result<u32,OmError>{
 
 		let start_time = SystemTime::now();
-		let mut scale = 1.0;
-		let mut frame_col: u32 = 0xa020a0ff;
+		let mut scale; // = 1.0;
+//		let mut frame_col: u32 = 0xa020a0ff;
 
 		let font = match Font::load( &input ) {
 			Err( e ) => { return Err( e ); },
@@ -57,8 +57,6 @@ impl FontPreviewer {
 				let now = SystemTime::now();
 				let time = now.duration_since(start_time).unwrap().as_millis();
 				let time = time as u128 as f32 / 1000.0;
-
-				scale = 0.5;
 
 				let is = font.image.dimensions().0 as f32;
 				scale = is / WIDTH as f32;
@@ -98,8 +96,8 @@ impl FontPreviewer {
 				}
 */
 				let m = 0.5 + 0.5 * ( time * 1.5 ).sin();
-				let frame_col = DrawBuffer::mixRgba( 0x808080ff, 0x802080ff, m );
-				let baseline_col = DrawBuffer::mixRgba( 0xffffffff, 0xe0e020ff, m );
+				let frame_col = DrawBuffer::mix_rgba( 0x808080ff, 0x802080ff, m );
+				let baseline_col = DrawBuffer::mix_rgba( 0xffffffff, 0xe0e020ff, m );
 				draw_buffer.copy_from_draw_buffer( &img_draw_buffer );
 				for g in &font.glyphs {
 					let bs = ( 5.0 * draw_buffer.get_scale() ).trunc() as u32; 

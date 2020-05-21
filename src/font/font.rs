@@ -7,7 +7,7 @@ use std::fs::File;
 use std::io::{BufReader, Read, Write};
 
 use image::{ DynamicImage, ImageFormat, GenericImage, GenericImageView };
-use rusttype::{point, FontCollection, PositionedGlyph, Scale};
+use rusttype::{point, FontCollection, Scale};
 use distance_field::DistanceFieldExt;
 
 #[derive(Debug,Copy,Clone)]
@@ -133,7 +133,7 @@ impl Font {
 
 		let mut codepoints = Vec::new();
 
-		for c in 0..count {
+		for _c in 0..count {
 			let codepoint = bufreader.read_u32::<LittleEndian>( ).unwrap_or( 0 );
 			codepoints.push( codepoint );
 		}
@@ -172,7 +172,7 @@ impl Font {
 			return Err( OmError::Generic("Broken file magic".to_string() ) );
 		}
 
-		let height = bufreader.read_u32::<LittleEndian>().unwrap_or( 0 );
+		let _height = bufreader.read_u32::<LittleEndian>().unwrap_or( 0 );
 
 		let mut tex_coords = [ 0f32; 4*2 ];
 		let mut v_pos = [ 0f32; 4*3 ];
@@ -226,7 +226,10 @@ impl Font {
 //				println!("{:#?}", f );
 			},
 			Err( _ ) => {
-				f.load_omfont( fontname );
+				match f.load_omfont( fontname ) {	// for the moment we don't care
+					Ok( _ ) => {},
+					Err( _ ) => {},
+				};
 			}
 		};
 
@@ -404,6 +407,7 @@ impl Font {
 		Ok( 1 )
 	}
 
+	#[allow(dead_code)]
 	fn save_omfont( &self, filename: &str ) -> Result< u32, OmError > {
 		let mut f = match File::create(filename) {
 			Ok( f ) => f,
@@ -427,7 +431,7 @@ impl Font {
 			let tex_w = ( g.width as f32 ) / ( self.texsize as f32 );
 			let tex_h = ( g.height as f32 ) / ( self.texsize as f32 );
 
-			let tex_s = self.texsize as f32;
+//			let _tex_s = self.texsize as f32;
 
 			let v_top = g.height as f32; // t
 			let v_bot = 0.0;			 // t - h
@@ -504,9 +508,8 @@ impl Font {
 			cnt += 1;
 			let codepoint = c;
 //			let codepoint = 0x30;	// :HACK:
-//			let g = font.glyph( c as char );
-			let g = font.glyph( codepoint as char );
-			let data = g.get_data();
+//			let g = font.glyph( codepoint as char );
+//			let data = g.get_data();
 //			println!("{:?} -> {:#?}", c, data );
 
 			// :HACK: :TODO: rasterize after positioning into final image
@@ -518,7 +521,7 @@ impl Font {
 				let pos = pg.position();
 				match pg.pixel_bounding_box() {
 					None => {
-						let mut glyph = Glyph::new( codepoint, 0, 0 );
+						let glyph = Glyph::new( codepoint, 0, 0 );
 						the_font.add_glyph( glyph );
 					},
 					Some( bb ) => {
@@ -562,7 +565,7 @@ impl Font {
 
 		let filename = format!("{}.png", output );
 		println!("Writing texture to {}", filename );
-		the_font.image.save_with_format( filename, ImageFormat::PNG );
+		the_font.image.save_with_format( filename, ImageFormat::PNG ).unwrap();
 
 		let filename = format!("{}.omfont", output );
 		println!("Writing font data to {}", filename );

@@ -1,7 +1,7 @@
 
-use image::{ DynamicImage, ImageFormat, GenericImage, GenericImageView };
+use image::{ DynamicImage, GenericImageView };
 
-const GRID_SIZE: u32 = 64;
+// const GRID_SIZE: u32 = 64;
 
 // :TODO: remove grid or refactor
 
@@ -65,7 +65,7 @@ impl DrawBuffer {
 				let a = pixel[ 3 ] as u32;
 				let bg = self.data[ pos ];
 				let fg: u32 = ( r << 16 )|( g << 8 )|( b << 0 );
-				let rgb = DrawBuffer::mixRgba( fg, bg, ( a as f32 )/255.0 );
+				let rgb = DrawBuffer::mix_rgba( fg, bg, ( a as f32 )/255.0 );
 
 				self.data[ pos ] = rgb;
 				pos += 1;
@@ -98,6 +98,7 @@ impl DrawBuffer {
 		}
 	}
 
+	#[allow(dead_code)]
 	fn draw_vline( &mut self, x: u32, sy: u32, ey: u32, col: u32 ) {
 		// :TODO: clip line
 		let w = self.width as usize;
@@ -179,7 +180,8 @@ impl DrawBuffer {
 	pub fn get_data( &self ) -> &Vec<u32> {
 		&self.data
 	}
-	pub fn mixRgba( a: u32, b: u32, f: f32 ) -> u32 {
+
+	pub fn mix_rgba( a: u32, b: u32, f: f32 ) -> u32 {
 		let ra = ( ( a >> 24 )&0x000000ff ) as u8;
 		let ga = ( ( a >> 16 )&0x000000ff ) as u8;
 		let ba = ( ( a >>  8 )&0x000000ff ) as u8;
@@ -200,7 +202,8 @@ impl DrawBuffer {
 		rgba
 	}
 
-	fn mixByte( a: u8, b: u8, f: u8 ) -> u8 {
+	#[allow(dead_code)]
+	fn mix_byte( a: u8, b: u8, f: u8 ) -> u8 {
 		let f = ( f as f32 )/255.0;
 		let fa = a as f32 * f;
 		let fb = b as f32 * (1.0-f);
