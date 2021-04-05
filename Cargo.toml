@@ -66,5 +66,6 @@ serde_json = "~1.0"
 resize="~0.4"
 png="~0.16"
 
-shader-crusher = { git = "https://github.com/AndreasOM/shader-crusher" }
+# shader-crusher = { git = "https://github.com/AndreasOM/shader-crusher" }
+shader-crusher = "0.1.1"
 
