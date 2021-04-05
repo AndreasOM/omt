@@ -1,10 +1,17 @@
 [package]
 name = "omt"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Andreas Neukoetter <andreas@omni-mad.com>"]
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+license = "MIT"
+description = "A set of tiny tools mostly used for game development. A Texture atlas packer, a font converter, a pakfile creator."
+readme = "README.md"
+homepage = "https://github.com/AndreasOM/omt"
+repository = "https://github.com/AndreasOM/omt"
+keywords = ["tools", "gamedev"]
+categories = ["command-line-utilities","compression","encoding","game-development","graphics"]
 
 [lib]
 name = "omt"
