@@ -28,6 +28,12 @@ fn main() {
 							.help("Set the output header")
 							.takes_value(true)
 						)
+						.arg(Arg::with_name("use-version")
+							.long("use-version")
+							.value_name("USE-VERSION")
+							.help("Set the version to use")
+							.takes_value(true)
+						)
 					)
 					.subcommand(SubCommand::with_name("info")
 						.arg(Arg::with_name("input")
@@ -43,12 +49,14 @@ fn main() {
 		let output = sub_matches.value_of("output").unwrap_or("test.sbk").to_string();
 		let input = sub_matches.value_of("input").unwrap_or("test.soundbank").to_string();
 		let output_header = sub_matches.value_of("output-header").unwrap_or("").to_string();
+		let use_version: u8 = sub_matches.value_of("use-version").unwrap_or("2").to_string().parse().unwrap_or(2);
 
 		println!("output         : {:?}", output );
 		println!("input          : {:?}", input );
 		println!("output-header  : {:?}", output_header );
+		println!("use-version    : {:?}", use_version );
 
-		match Soundbank::build( &output, &input, &output_header ) {
+		match Soundbank::build( &output, &input, &output_header, use_version ) {
 			Ok( _ ) => {
 				println!("soundbank created" );
 				process::exit( 0 );

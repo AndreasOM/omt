@@ -48,14 +48,21 @@ impl Entry {
 pub struct Soundbank {
 
 	entries: Vec<Entry>,
+	version: u8,
 }
 
 impl Soundbank {
 	pub fn new() -> Soundbank {
 		Soundbank {
 			entries: Vec::new(),
+			version: 2,
 		}
 	}
+
+	pub fn set_version( &mut self, version: u8 ) {
+		self.version = version;
+	}
+
 	pub fn add_entry( &mut self, entry: &Entry ) {
 		self.entries.push( entry.clone() );
 	}
@@ -71,7 +78,7 @@ impl Soundbank {
 		f.write_all(&[
 			0x4f, 0x4d, 0x53, 0x4e, 0x44, 0x42, 0x4e,	// OMSNDBN(K)
 			compress as u8,								// K or Z
-			0x02, 0x00, 0x00, 0x00,
+			self.version, 0x00, 0x00, 0x00,
 
 		]).unwrap();
 		f.write_u16::<LittleEndian>( self.entries.len() as u16 ).unwrap();
@@ -90,6 +97,22 @@ impl Soundbank {
 				f.write_u8( 0 ).unwrap();
 				c += 1;
 			}
+
+			if self.version >= 3 {
+	//			dbg!(&e.id);
+
+				let n = &e.id;
+				let mut c = 0;
+				for nn in n.as_bytes() {
+					f.write_u8( *nn ).unwrap();
+					c += 1;
+				}
+				while c < 32 {
+					f.write_u8( 0 ).unwrap();
+					c += 1;
+				}
+			}
+
 			f.write_u16::<LittleEndian>( e.max_instances ).unwrap();
 			let drop_mode_u16 = match e.drop_mode {
 				DropMode::Drop => 1,
@@ -135,6 +158,7 @@ impl Soundbank {
 		output: &str,
 		input: &str,
 		header: &str,
+		use_version: u8,
 	) -> Result<u32, OmError> {
 
 		let lines = match FileHelper::lines_in_file( input ) {
@@ -144,6 +168,7 @@ impl Soundbank {
 
 		let mut soundbank = Soundbank::new();
 
+		soundbank.set_version( use_version );
 		for line in lines {
 			let line = line.trim();
 			if line.len() == 0 {
