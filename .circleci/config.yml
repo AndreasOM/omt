@@ -9,17 +9,18 @@ jobs:
   build:
     macos:
       xcode: 13.0.0
-    docker:
-      - image: cimg/rust:1.57.0
+#    docker:
+#      - image: cimg/rust:1.57.0
     steps:
+      - run: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
       - checkout
       - run: cargo --version
       - run: cargo build --release
   release:
     macos:
       xcode: 13.0.0
-    docker:
-      - image: cimg/rust:1.57.0
+#    docker:
+#      - image: cimg/rust:1.57.0
     steps:
       - run: find .
 
