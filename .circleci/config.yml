@@ -16,6 +16,13 @@ jobs:
       - checkout
       - run: cargo --version
       - run: cargo build --release
+      - run:
+          name: Prepare Artifacts
+          command: |
+            mkdir -p /tmp/artifacts/target;
+            cp -R target/release /tmp/artifacts/target;
+      - store_artifacts:
+          path: /tmp/artifacts      
   release:
     macos:
       xcode: 13.0.0
