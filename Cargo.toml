@@ -13,6 +13,16 @@ repository = "https://github.com/AndreasOM/omt"
 keywords = ["tools", "gamedev"]
 categories = ["command-line-utilities","compression","encoding","game-development","graphics"]
 
+exclude = [
+    "Content",
+    "Data",
+    "docs",
+#    "src",
+    ".circleci",
+    ".github",
+    ".gitignore",
+]
+
 [lib]
 name = "omt"
 path = "src/lib.rs"

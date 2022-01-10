@@ -3,14 +3,38 @@
 # See: https://circleci.com/docs/2.0/configuration-reference
 version: 2.1
 
+executors:
+  linux:
+    docker:
+      - image: cimg/rust:1.57.0
+#        auth:
+#          username: test
+#          password: nope
+#    machine:
+#      image: ubuntu-2004:202107-02
+  macos:
+    macos:
+      xcode: 13.0.0
+#  windows:
+#      - image: win/default
+
+#orbs:
+#  node: circleci/node@2.0.0
+
+
 # Define a job to be invoked later in a workflow.
 # See: https://circleci.com/docs/2.0/configuration-reference/#jobs
 jobs:
   build:
-    macos:
-      xcode: 13.0.0
+    parameters:
+      os:
+        type: executor
+    executor: << parameters.os >>
+#    macos:
+#      xcode: 13.0.0
 #    docker:
 #      - image: cimg/rust:1.57.0
+# x86_64-apple-darwin, x86_64-pc-windows-gnu, x86_64-unknown-linux-musl
     steps:
       - run: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
       - checkout
@@ -20,22 +44,31 @@ jobs:
           name: Prepare Artifacts
           command: |
             mkdir -p /tmp/artifacts/target;
-            cp -R target/release /tmp/artifacts/target;
+            ls -1 target/release/omt-*|grep -v ".d$"| xargs -J cp % /tmp/artifacts/target
+#            cp -R target/release /tmp/artifacts/target;
       - store_artifacts:
           path: /tmp/artifacts      
-  release:
-    macos:
-      xcode: 13.0.0
+#  release:
+#    parameters:
+#      os:
+#        type: executor
+#    executor: << parameters.os >>            
+#    macos:
+#      xcode: 13.0.0
 #    docker:
 #      - image: cimg/rust:1.57.0
-    steps:
-      - run: find .
+#    steps:
+#      - run: find .
 
 # See: https://circleci.com/docs/2.0/configuration-reference/#workflows
 workflows:
   build-and-release:
     jobs:
-      - build
-      - release:
-          requires:
-            - build
+      - build:
+          matrix:
+            parameters:
+              os: [linux, macos]        
+#              os: [macos]
+#      - release:
+#          requires:
+#            - build
