@@ -84,7 +84,7 @@ workflows:
               os: [linux, macos]        
       - release:
           requires:
-            - build
+            - build-<< matrix.os >>
           matrix:
             parameters:
               os: [linux, macos]        
