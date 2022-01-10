@@ -45,7 +45,7 @@ jobs:
           command: |
             find .
             mkdir -p /tmp/artifacts/target;
-            ls -1 target/release/omt-*|grep -v ".d$"| xargs -I cp % /tmp/artifacts/target
+            ls -1 target/release/omt-*|grep -v ".d$"| xargs -I % cp % /tmp/artifacts/target
 #            cp -R target/release /tmp/artifacts/target;
       - store_artifacts:
           path: /tmp/artifacts      
