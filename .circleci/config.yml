@@ -82,7 +82,6 @@ workflows:
           matrix:
             parameters:
               os: [linux, macos]        
-#              os: [macos]
-#      - release:
-#          requires:
-#            - build
+      - release:
+          requires:
+            - build
