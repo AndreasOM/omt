@@ -36,30 +36,43 @@ jobs:
 #      - image: cimg/rust:1.57.0
 # x86_64-apple-darwin, x86_64-pc-windows-gnu, x86_64-unknown-linux-musl
     steps:
-      - run: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
       - checkout
+      - restore_cache:
+          keys:
+            - cargo-{{ checksum "Cargo.lock" }}
+            - cargo- # used if checksum fails      
+      - run: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
       - run: cargo --version
       - run: cargo build --release
-      - run:
-          name: Prepare Artifacts
-          command: |
-            find .
-            mkdir -p /tmp/artifacts/target;
-            ls -1 target/release/omt-*|grep -v ".d$"| xargs -I % cp % /tmp/artifacts/target
-#            cp -R target/release /tmp/artifacts/target;
-      - store_artifacts:
-          path: /tmp/artifacts      
-#  release:
-#    parameters:
-#      os:
-#        type: executor
-#    executor: << parameters.os >>            
-#    macos:
-#      xcode: 13.0.0
-#    docker:
-#      - image: cimg/rust:1.57.0
-#    steps:
-#      - run: find .
+#      - run:
+#          name: Prepare Artifacts
+#          command: |
+#            find .
+#            mkdir -p /tmp/artifacts/target;
+#            ls -1 target/release/omt-*|grep -v ".d$"| xargs -I % cp % /tmp/artifacts/target
+#      - store_artifacts:
+#          path: /tmp/artifacts
+      - persist_to_workspace:
+          root: .
+          paths:
+            - .          
+      - save_cache:
+          key: cargo-{{ checksum "Cargo.lock" }}
+          paths: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+  release:
+    parameters:
+      os:
+        type: executor
+    executor: << parameters.os >>
+    steps:
+      - attach_workspace:
+          at: .
+      - run: find .
 
 # See: https://circleci.com/docs/2.0/configuration-reference/#workflows
 workflows:
