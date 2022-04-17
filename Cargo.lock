@@ -549,7 +549,7 @@ dependencies = [
 
 [[package]]
 name = "omt"
-version = "0.4.0-alpha"
+version = "0.4.1-dev"
 dependencies = [
  "byteorder",
  "clap",
