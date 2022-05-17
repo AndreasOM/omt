@@ -24,9 +24,9 @@ jobs:
           app_version=$(grep version Cargo.toml|cut -d"\"" -f2|head -n 1)
           echo "APP_VERSION=${app_version}" >> $GITHUB_ENV
 
-      - name: Create Release
+      - name: Create DRAFT Release
         run: |
-          gh release create ${{ env.APP_VERSION }}
+          gh release create ${{ env.APP_VERSION }} --draft
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -81,11 +81,44 @@ jobs:
           cd ..
           pwd
           ls -l
+          ls -l omt-linux/*
           tar czf omt-linux-${{ env.APP_VERSION }}.tgz omt-linux/*
+          ls -l
 
       - name: Upload to Release
         run: |
-          gh release upload ${{ env.APP_VERSION }} ./dist/*.tgz
+          dist_dir="${{ runner.temp }}/dist/omt-linux"
+          mkdir -p ${dist_dir}
+          cd ..
+          gh release upload ${{ env.APP_VERSION }} ./*.tgz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create Summary
+        run: |
+          echo "| APP_VERSION  | ${{ env.APP_VERSION }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| :----------- | ---------------------: |" >> $GITHUB_STEP_SUMMARY
+
+  create_release:
+    name: Release Release
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+
+      - name: Prepare Variables
+        run: |
+          app_version=$(grep version Cargo.toml|cut -d"\"" -f2|head -n 1)
+          echo "APP_VERSION=${app_version}" >> $GITHUB_ENV
+
+      - name: Create DRAFT Release
+        run: |
+          gh release edit ${{ env.APP_VERSION }} --draft=false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
