@@ -35,6 +35,8 @@ jobs:
 #    docker:
 #      - image: cimg/rust:1.57.0
 # x86_64-apple-darwin, x86_64-pc-windows-gnu, x86_64-unknown-linux-musl
+    environment:
+      CARGO_TARGET_DIR: /tmp/<< parameters.os >>
     steps:
       - checkout
       - restore_cache:
@@ -53,7 +55,7 @@ jobs:
 #      - store_artifacts:
 #          path: /tmp/artifacts
       - persist_to_workspace:
-          root: .
+          root: /tmp/<< parameters.os >>
           paths:
             - .          
       - save_cache:
@@ -71,8 +73,8 @@ jobs:
     executor: << parameters.os >>
     steps:
       - attach_workspace:
-          at: .
-      - run: find .
+          at: /tmp/<< parameters.os >>
+      - run: find /tmp/<< parameters.os >>
 
 # See: https://circleci.com/docs/2.0/configuration-reference/#workflows
 workflows:
