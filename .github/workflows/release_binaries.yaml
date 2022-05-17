@@ -27,6 +27,8 @@ jobs:
       - name: Create Release
         run: |
           gh release create ${{ env.APP_VERSION }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create Summary
         run: |
@@ -80,6 +82,8 @@ jobs:
       - name: Upload to Release
         run: |
           gh release upload ${{ env.APP_VERSION }} ./dist/*.tgz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create Summary
         run: |
