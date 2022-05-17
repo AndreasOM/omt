@@ -99,7 +99,7 @@ jobs:
           echo "| APP_VERSION  | ${{ env.APP_VERSION }} |" >> $GITHUB_STEP_SUMMARY
           echo "| :----------- | ---------------------: |" >> $GITHUB_STEP_SUMMARY
 
-  create_release:
+  release_release:
     name: Release Release
     runs-on: ubuntu-latest
     defaults:
