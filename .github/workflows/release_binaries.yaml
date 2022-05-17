@@ -89,7 +89,7 @@ jobs:
       - name: Upload to Release
         run: |
           dist_dir="${{ runner.temp }}/dist/omt-linux"
-          mkdir -p ${dist_dir}
+          cd ${dist_dir}
           cd ..
           ls -l *.tgz
           gh release upload ${{ env.APP_VERSION }} omt-linux-${{ env.APP_VERSION }}.tgz
