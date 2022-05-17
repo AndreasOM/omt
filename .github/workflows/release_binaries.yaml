@@ -76,7 +76,11 @@ jobs:
           cp target/release/omt-soundbank ${dist_dir}
           cp target/release/omt-xcassets ${dist_dir}
           cd ${dist_dir}
+          pwd
+          ls
           cd ..
+          pwd
+          ls -l
           tar czf omt-linux-${{ env.APP_VERSION }}.tgz omt-linux/*
 
       - name: Upload to Release
