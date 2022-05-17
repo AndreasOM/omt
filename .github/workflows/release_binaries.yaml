@@ -1,0 +1,87 @@
+name: Release Binaries
+
+on:
+  workflow_dispatch:  
+  push:
+    tags:
+      - "*-alpha-DISABLED"
+
+jobs:
+  create_release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+
+      - name: Prepare Variables
+        run: |
+          app_version=$(grep version Cargo.toml|cut -d"\"" -f2|head -n 1)
+          echo "APP_VERSION=${app_version}" >> $GITHUB_ENV
+
+      - name: Create Release
+        run: |
+          gh release create ${{ APP_VERSION }}
+
+      - name: Create Summary
+        run: |
+          echo "| APP_VERSION  | ${{ env.APP_VERSION }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| :----------- | ---------------------: |" >> $GITHUB_STEP_SUMMARY
+
+  release_binaries:
+    name: Release Binaries
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+
+      - name: Prepare Variables
+        run: |
+          app_version=$(grep version Cargo.toml|cut -d"\"" -f2|head -n 1)
+          echo "APP_VERSION=${app_version}" >> $GITHUB_ENV
+
+      - name: Install Stable rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+
+      - uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --release --all-features
+
+      - name: Create Distribution
+        run: |
+          dist_dir="${{ runner.temp }}/dist/omt-linux"
+          mkdir -p ${dist_dir}
+          cp target/release/omt-asset ${dist_dir}
+          cp target/release/omt-atlas ${dist_dir}
+          cp target/release/omt-font ${dist_dir}
+          cp target/release/omt-packer ${dist_dir}
+          cp target/release/omt-script ${dist_dir}
+          cp target/release/omt-shader ${dist_dir}
+          cp target/release/omt-soundbank ${dist_dir}
+          cp target/release/omt-xcassets ${dist_dir}
+          cd ${dist_dir}
+          cd ..
+          tar czf omt-linux-${{ APP_VERSION }}.tgz omt-linux/*
+
+      - name: Upload to Release
+        run: |
+          gh release upload ${{ APP_VERSION }} ./dist/*.tgz
+
+      - name: Create Summary
+        run: |
+          echo "| APP_VERSION  | ${{ env.APP_VERSION }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| :----------- | ---------------------: |" >> $GITHUB_STEP_SUMMARY
