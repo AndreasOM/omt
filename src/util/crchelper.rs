@@ -1,4 +1,3 @@
-use crc::crc32;
 
 pub struct CrcHelper {
 
@@ -32,7 +31,8 @@ impl CrcHelper {
 	pub fn crc_from_name_upcase_underscore( name: &str ) -> u32 {
 		let clean_name = CrcHelper::clean_name_from_name_upcase_underscore( name );
 		println!("clean_name: {:?}", clean_name );
-		let crc = crc32::checksum_ieee(clean_name.as_bytes());
+		const CRC32: crc::Crc<u32> = crc::Crc::<u32>::new(&crc::CRC_32_ISO_HDLC);
+		let crc = CRC32.checksum( clean_name.as_bytes() );
 
 		crc
 	}
@@ -57,7 +57,8 @@ impl CrcHelper {
 	//		0x7f => c,			// ignore DEL
 			_ => ' '
 		}).collect();
-		let crc = crc32::checksum_ieee(clean_name.as_bytes());
+		const CRC32: crc::Crc<u32> = crc::Crc::<u32>::new(&crc::CRC_32_ISO_HDLC);
+		let crc = CRC32.checksum( clean_name.as_bytes() );
 
 		crc
 	}

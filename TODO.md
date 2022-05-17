@@ -12,6 +12,7 @@
 
 # TODO
 
+[ ] Use crchelper functions in packer
 [ ] omt-xcassets: Fix filter
 [ ] omt-xcassets: Implement mode fill
 [ ] omt-xcassets: Implement mode update

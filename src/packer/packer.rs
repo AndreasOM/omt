@@ -1,7 +1,5 @@
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 
-use crc::crc32;
-
 use std::fs;
 use std::fs::File;
 use std::io::{BufRead, BufReader, Read, Write};
@@ -41,7 +39,10 @@ impl Entry {
 	//		0x7f => c,			// ignore DEL
 			_ => ' '
 		}).collect();
-		let crc = crc32::checksum_ieee(clean_name.as_bytes());
+
+		const CRC32: crc::Crc<u32> = crc::Crc::<u32>::new(&crc::CRC_32_ISO_HDLC);
+		let crc = CRC32.checksum( clean_name.as_bytes() );
+
 		println!("CRC: {:?} -> {:?} crc: {:?} {:#10X}\n", filename, clean_name, crc, crc );
 //	      puts "CRC: " + filename + " -> " + name + " crc: " + @crc.to_s
 
