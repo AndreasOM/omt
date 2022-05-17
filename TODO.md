@@ -12,8 +12,6 @@
 
 # TODO
 
-[ ] Publish new version via github action
-[ ] Release binary packages via github actions
 [ ] Use crchelper functions in packer
 [ ] Update packages for
 	[ ] clap
@@ -53,9 +51,17 @@
 
 # DONE
 
+## 2022
+
+### May
+
+[x] Publish new version via github action
+[x] Release binary packages via github actions
+
 ## 2020
 
 ### April
+
 [x] Allow runnig exactly one specified asset_config (by passing file to content-directory)
 [x] Added very basic build action to github
 [x] Initial version of omt-shader
