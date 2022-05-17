@@ -74,7 +74,7 @@ rlua = "0.17.0"
 serde = { version = "~1.0", features = ["derive"] }
 serde_json = "~1.0"
 resize="~0.4"
-png="~0.16"
+png="0.17.5"
 
 # shader-crusher = { git = "https://github.com/AndreasOM/shader-crusher" }
 shader-crusher = "0.3.0-alpha"

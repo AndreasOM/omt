@@ -28,11 +28,18 @@ impl Xcassets {
 
 		// load the source // :TODO: handle errors better
 	    let decoder = png::Decoder::new(File::open(&input).unwrap());
-	    let (info, mut reader) = decoder.read_info().unwrap();
-	    let mut src = vec![0; info.buffer_size()];
+//	    let (info, mut reader) = decoder.read_info().unwrap();
+	    let mut reader = decoder.read_info().unwrap();
+	    
+	    let info = reader.info();
+	    println!("{:#?}", info);
+		let width = info.width;
+		let height = info.height;
+
+//	    let mut src = vec![0; info.buffer_size()];
+	    let mut src = vec![0; reader.output_buffer_size()];
 	    reader.next_frame(&mut src).unwrap();
 
-	    println!("{:#?}", info);
 
 	    let src = src;
 
@@ -81,7 +88,7 @@ impl Xcassets {
 				let mut dst = vec![0; 3 * sw * sh];
 
 				resize::resize(
-					info.width as usize, info.height as usize,
+					width as usize, height as usize,
 					sw, sh,
 					Pixel::RGB24,
 					Type::Lanczos3,
@@ -94,7 +101,7 @@ impl Xcassets {
 
  				let outfh = File::create(scaled_filename).unwrap();
     			let mut encoder = png::Encoder::new(outfh, sw as u32, sh as u32);
-    			encoder.set_color(png::ColorType::RGB);
+    			encoder.set_color(png::ColorType::Rgb);
 				encoder.set_depth(png::BitDepth::Eight);
     			encoder.write_header().unwrap().write_image_data(&dst).unwrap();
 //    			encoder.write_header().unwrap().write_image_data(&src).unwrap();
