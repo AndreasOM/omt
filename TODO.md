@@ -13,6 +13,7 @@
 # TODO
 
 [ ] Publish new version via github action
+[ ] Release binary packages via github actions
 [ ] Use crchelper functions in packer
 [ ] Update packages for
 	[ ] clap
