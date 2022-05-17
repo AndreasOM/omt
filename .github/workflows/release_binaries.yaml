@@ -26,7 +26,7 @@ jobs:
 
       - name: Create Release
         run: |
-          gh release create ${{ APP_VERSION }}
+          gh release create ${{ env.APP_VERSION }}
 
       - name: Create Summary
         run: |
@@ -75,11 +75,11 @@ jobs:
           cp target/release/omt-xcassets ${dist_dir}
           cd ${dist_dir}
           cd ..
-          tar czf omt-linux-${{ APP_VERSION }}.tgz omt-linux/*
+          tar czf omt-linux-${{ env.APP_VERSION }}.tgz omt-linux/*
 
       - name: Upload to Release
         run: |
-          gh release upload ${{ APP_VERSION }} ./dist/*.tgz
+          gh release upload ${{ env.APP_VERSION }} ./dist/*.tgz
 
       - name: Create Summary
         run: |
