@@ -37,6 +37,7 @@ jobs:
 
   release_binaries:
     name: Release Binaries
+    needs: create_release
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -90,7 +91,8 @@ jobs:
           dist_dir="${{ runner.temp }}/dist/omt-linux"
           mkdir -p ${dist_dir}
           cd ..
-          gh release upload ${{ env.APP_VERSION }} ./*.tgz
+          ls -l *.tgz
+          gh release upload ${{ env.APP_VERSION }} omt-linux-${{ env.APP_VERSION }}.tgz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -101,6 +103,7 @@ jobs:
 
   release_release:
     name: Release Release
+    needs: release_binaries
     runs-on: ubuntu-latest
     defaults:
       run:
