@@ -89,7 +89,6 @@ jobs:
       - name: Upload to Release
         run: |
           dist_dir="${{ runner.temp }}/dist/omt-linux"
-#          cd ${dist_dir}
           gh release upload ${{ env.APP_VERSION }} ${dist_dir}/../omt-linux-${{ env.APP_VERSION }}.tgz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
