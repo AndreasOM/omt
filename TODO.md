@@ -12,7 +12,12 @@
 
 # TODO
 
+[ ] Publish new version via github action
 [ ] Use crchelper functions in packer
+[ ] Update packages for
+	[ ] clap
+	[ ] shader-crusher
+	[ ] distance-field (as soon as it is release with new image (>0.24.x) dependency)
 [ ] omt-xcassets: Fix filter
 [ ] omt-xcassets: Implement mode fill
 [ ] omt-xcassets: Implement mode update
