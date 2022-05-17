@@ -4,7 +4,7 @@ on:
   workflow_dispatch:  
   push:
     tags:
-      - "*-alpha-DISABLED"
+      - "*-alpha"
 
 jobs:
   create_release:
