@@ -5,6 +5,8 @@ use std::fs::File;
 
 use resize::{Pixel, Type};
 
+use rgb::FromSlice;
+
 pub struct Xcassets {
 
 }
@@ -87,15 +89,28 @@ impl Xcassets {
 
 				let mut dst = vec![0; 3 * sw * sh];
 
-				resize::resize(
+				let mut resizer = match resize::new(
 					width as usize, height as usize,
 					sw, sh,
-					Pixel::RGB24,
+					Pixel::RGB8,
 					Type::Lanczos3,
 				//	Type::Mitchell,
-					&src,
-					&mut dst
-				);
+				) {
+					Ok( r ) => r,
+					Err( e ) => {
+						return Err( OmError::Generic("Error creating resizer".to_string()) );
+					},
+				};
+
+				match resizer.resize(
+					src.as_rgb(),
+					dst.as_rgb_mut()
+				) {
+					Ok( r ) => r,
+					Err( e ) => {
+						return Err( OmError::Generic("Error resizing".to_string()) );
+					},
+				};
 
 				let scaled_filename = format!("{}/{}", output, name);
 
