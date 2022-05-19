@@ -38,10 +38,19 @@ jobs:
   release_binaries:
     name: Release Binaries
     needs: create_release
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     defaults:
       run:
         shell: bash
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            package_prefix: omt-linux
+          - os: macos-11
+            package_prefix: omt-macos
+          - os: windows-latest
+            package_prefix: omt-windows
 
     steps:
       - uses: actions/checkout@v3
@@ -66,7 +75,7 @@ jobs:
 
       - name: Create Distribution
         run: |
-          dist_dir="${{ runner.temp }}/dist/omt-linux"
+          dist_dir="${{ runner.temp }}/dist/${{ matrix.package_prefix}}"
           mkdir -p ${dist_dir}
           cp target/release/omt-asset ${dist_dir}
           cp target/release/omt-atlas ${dist_dir}
@@ -82,14 +91,14 @@ jobs:
           cd ..
           pwd
           ls -l
-          ls -l omt-linux/*
-          tar czf omt-linux-${{ env.APP_VERSION }}.tgz omt-linux/*
+          ls -l ${{ matrix.package_prefix}}/*
+          tar czf ${{ matrix.package_prefix}}-${{ env.APP_VERSION }}.tgz ${{ matrix.package_prefix}}/*
           ls -l
 
       - name: Upload to Release
         run: |
-          dist_dir="${{ runner.temp }}/dist/omt-linux"
-          gh release upload ${{ env.APP_VERSION }} ${dist_dir}/../omt-linux-${{ env.APP_VERSION }}.tgz
+          dist_dir="${{ runner.temp }}/dist/${{ matrix.package_prefix}}"
+          gh release upload ${{ env.APP_VERSION }} ${dist_dir}/../${{ matrix.package_prefix}}-${{ env.APP_VERSION }}.tgz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -116,7 +125,7 @@ jobs:
           app_version=$(grep version Cargo.toml|cut -d"\"" -f2|head -n 1)
           echo "APP_VERSION=${app_version}" >> $GITHUB_ENV
 
-      - name: Create DRAFT Release
+      - name: Create Release
         run: |
           gh release edit ${{ env.APP_VERSION }} --draft=false
         env:
