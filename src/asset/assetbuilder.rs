@@ -165,12 +165,15 @@ impl AssetBuilder{
 		)
 	-> String {
 		let output = input.clone();
+//		let re = Regex::new(r"\$\{((.*?)(\s*)(.*)?)\}").unwrap();
 		let re = Regex::new(r"\$\{(.*?)\}").unwrap();
 
-		let output = re.replace_all(
+		let output = re.replace_all( // :TODO: the whole body of this needs a massive refactoring
 			&output,
 			|c: &regex::Captures| {
-				let placeholder = c.get(1).map_or( "", |m| m.as_str() );
+				// println!("{:#?}", &c);
+				let placeholder_full = c.get(1).map_or( "", |m| m.as_str() );
+				let placeholder = placeholder_full.split(" ").next().map_or( "", |m| m );
 				println!("Found {:?}", placeholder );
 				match placeholder {
 					"" => "".to_string(),
@@ -189,12 +192,20 @@ impl AssetBuilder{
 							"".to_string()
 						};
 						match Path::new( &input ).file_name() {
-							Some( basename ) => basename.to_os_string().into_string().unwrap_or( "".to_string() ),
+							Some( basename ) => {
+								let remove_ext = placeholder_full.split(" ").nth(1).map_or( "", |m| m );
+								println!("remove: {}", &remove_ext );							
+
+								let basename = basename.to_os_string().into_string().unwrap_or( "".to_string() );
+								basename.strip_suffix( remove_ext ).map_or( basename.clone(), |m| m.to_string() )
+							},
 							None => "".to_string(),
 						} //.unwrap_or("".to_os_string()).to_string()
 					},
 					"data_directory" => self.data_directory.clone(),
 					param => {
+						// extended handling
+
 						println!("{:?}", tool_run.parameters.get( param ) );
 						tool_run.parameters.get( param ).unwrap_or( &ParameterValue::NoValue ).to_string()
 					},
