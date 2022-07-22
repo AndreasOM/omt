@@ -714,7 +714,7 @@ dependencies = [
 
 [[package]]
 name = "omt"
-version = "0.5.1-alpha"
+version = "0.5.2-dev"
 dependencies = [
  "byteorder",
  "clap",
