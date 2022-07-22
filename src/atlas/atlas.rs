@@ -402,7 +402,7 @@ impl Atlas {
 		let mut entries = Vec::new();
 		// collect inputs
 		for i in input {
-//			println!("Analysing {:?}", i );
+			println!("Analysing {:?}", i );
 			let img = image::open(i).unwrap();
 
 			let mut e = Entry::new( i, 0, 0 );
@@ -478,6 +478,7 @@ impl Atlas {
 //					println!("{:?} bytes written to image {}", bytes_written, pngname );
 				},
 				Err( e ) => {
+					println!("Error writing .png to {}", &pngname);
 					return Err( e );
 				}
 			}
@@ -486,6 +487,7 @@ impl Atlas {
 //					println!("{:?} bytes written to atlas {}", bytes_written, atlasname );
 				},
 				Err( e ) => {
+					println!("Error writing .atlas to {}", &atlasname);
 					return Err( e );
 				}
 			}
@@ -494,6 +496,7 @@ impl Atlas {
 //					println!("{:?} bytes written to map {}", bytes_written, atlasname );
 				},
 				Err( e ) => {
+					println!("Error writing .map to {}", &mapname);
 					return Err( e );
 				}
 			}

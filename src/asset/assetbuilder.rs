@@ -179,10 +179,12 @@ impl AssetBuilder{
 					"" => "".to_string(),
 					"tool" => tool_run.tool.clone(),
 					"command" => tool_run.command.clone(),
-					"output" => format!("\"{}\"", tool_run.output).clone(),
+					"output" => format!("{}", tool_run.output).clone(),
 					"input" => {
 						tool_run.input.iter().map( |s|
-							format!("\t\"{}\"", s).clone()
+							// format!("\t\"{}\"", s).clone()
+							// format!(" \"{}\"", s).clone()
+							format!("{} ", s).clone()
 						).collect::<Vec<_>>().join(" ").to_string()
 					},
 					"input:basename" => {
@@ -230,9 +232,21 @@ impl AssetBuilder{
 			println!("🌵 Dry Run: >{}<", &cmd_line);
 			Ok( 0 )
 		} else {
-		let output = Command::new("/bin/sh").args(&["-c", &cmd_line]).output();
+			dbg!(&cmd_line);
+			let mut cmd_line = cmd_line.split(' ');
+			let cmd = cmd_line.next().unwrap_or("");
+			let args: Vec< &str > = cmd_line.filter(|n| !n.trim().is_empty()).collect();
+			dbg!(&cmd);
+			dbg!(&args);
+			let output = Command::new(cmd)
+			.args(&args)
+			.output();
+//		let output = Command::new("/bin/sh").args(&["-c", &cmd_line]).output();
 			match output {
-				Err( _e ) => Err("Error running external command"),
+				Err( e ) => {
+					println!("Error running external program: {}", &e );
+					Err("Error running external command")
+				},
 				Ok( output ) => {
 					let stdout = String::from_utf8_lossy(&output.stdout);
 					let stderr = String::from_utf8_lossy(&output.stderr);
@@ -303,6 +317,8 @@ impl AssetBuilder{
 				let command = doc["command"].as_str().unwrap_or("");
 				let output = doc["output"].as_str().unwrap_or("");
 				let cmd_line = doc["cmd_line"].as_str().unwrap_or("");
+//				dbg!(&cmd_line);
+//				todo!("cmd_line");
 				let mut input = Vec::new();
 
 				let combine_inputs = doc["combine-inputs"].as_bool().unwrap_or(false);
