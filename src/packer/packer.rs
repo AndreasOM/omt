@@ -5,9 +5,9 @@ use std::string::String;
 
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 struct Entry {
-	basepath: String,
+//	basepath: String,
 	filename: String,
 	crc:      u32,
 	size:     u32,
@@ -52,23 +52,22 @@ impl Entry {
 		//	      puts "CRC: " + filename + " -> " + name + " crc: " + @crc.to_s
 
 		Entry {
-			basepath: basepath.to_string(),
+//			basepath: basepath.to_string(),
 			filename: filename.to_string(),
 			crc:      crc,
 			size:     size,
-			pos:      0,
-			data:     Vec::new(),
+			..Default::default()
 		}
 	}
 
 	fn create_from_archive(crc: u32, pos: u32, size: u32) -> Entry {
 		Entry {
-			basepath: String::new(),
+			//basepath: String::new(),
 			filename: String::new(),
 			crc:      crc,
 			size:     size,
 			pos:      pos,
-			data:     Vec::new(),
+			..Default::default()
 		}
 	}
 

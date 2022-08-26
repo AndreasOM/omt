@@ -77,23 +77,21 @@ impl Row {
 	}
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Page {
 	size:        u32,
-	border:      u32,
+//	border:      u32,
 	pub entries: Vec<EntryWithPosition>,
 	rows:        Vec<Row>,
 	used_height: u32,
 }
 
 impl Page {
-	pub fn new(size: u32, border: u32) -> Page {
+	pub fn new(size: u32, _border: u32) -> Page {
 		Page {
 			size:        size,
-			border:      border,
-			entries:     Vec::new(),
-			rows:        Vec::new(),
-			used_height: 0,
+//			border:      border,
+			..Default::default()
 		}
 	}
 	fn add_row(&mut self, height: u32) -> Option<usize> {
