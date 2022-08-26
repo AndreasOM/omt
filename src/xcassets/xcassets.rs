@@ -3,19 +3,19 @@ use std::fs::File;
 use resize::{Pixel, Type};
 use rgb::FromSlice;
 
-use crate::util::OmError;
 use crate::xcassets::appiconset::AppIconSet;
 
 pub struct Xcassets {}
 
 impl Xcassets {
-	pub fn generate(input: &str, mode: &str, output: &str) -> Result<u32, OmError> {
+	pub fn generate(input: &str, mode: &str, output: &str) -> anyhow::Result<u32> {
 		let content_json_filename = format!("{}/Contents.json", output);
 		let mut app_icon_set = match AppIconSet::load(&content_json_filename) {
 			Ok(ais) => ais,
 			Err(e) => {
 				println!("ERROR: AppIconSet::load failed with {:?}", e);
-				return Err(OmError::Generic("problem with output file".to_string()));
+				anyhow::bail!("problem with output file");
+//				return Err(OmError::Generic("problem with output file".to_string()));
 			},
 		};
 
@@ -54,7 +54,8 @@ impl Xcassets {
 					"1x" => 1.0,
 					"2x" => 2.0,
 					"3x" => 3.0,
-					_ => return Err(OmError::Generic("Unsupported scale".to_string())),
+					// _ => return Err(OmError::Generic("Unsupported scale".to_string())),
+					_ => anyhow::bail!("Unsupported scale"),
 				};
 				let size = ie.size.split("x").collect::<Vec<&str>>();
 				let (w, h) = (size[0], size[1]);
@@ -89,14 +90,16 @@ impl Xcassets {
 				) {
 					Ok(r) => r,
 					Err(e) => {
-						return Err(OmError::Generic("Error creating resizer".to_string()));
+						//return Err(OmError::Generic("Error creating resizer".to_string()));
+						anyhow::bail!("Error creating resizer: {}", &e);
 					},
 				};
 
 				match resizer.resize(src.as_rgb(), dst.as_rgb_mut()) {
 					Ok(r) => r,
 					Err(e) => {
-						return Err(OmError::Generic("Error resizing".to_string()));
+						//return Err(OmError::Generic("Error resizing".to_string()));
+						anyhow::bail!("Error resizing: {}", &e);
 					},
 				};
 
@@ -122,7 +125,8 @@ impl Xcassets {
 			//			println!("{:#?}", app_icon_set);
 			match app_icon_set.save(&content_json_filename) {
 				Ok(_) => {},
-				Err(_e) => return Err(OmError::Generic("Error saving app icon set".to_string())),
+//				Err(_e) => return Err(OmError::Generic("Error saving app icon set".to_string())),
+				Err(_e) => anyhow::bail!("Error saving app icon set"),
 			}
 		}
 
