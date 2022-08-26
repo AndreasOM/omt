@@ -5,8 +5,9 @@ use omt::soundbank::Soundbank;
 
 fn main() {
 // omt-soundbank convert --input Data/test.soundbank --output Data/test.sbk --header Data/test_sound.h
+	const VERSION: &str = env!("CARGO_PKG_VERSION");
 	let matches = App::new("omt-soundbank")
-					.version("0.1")
+					.version(VERSION)
 					.author("Andreas N. <andreas@omni-mad.com>")
 					.about("Handles soundbank")
 					.subcommand(SubCommand::with_name("build")

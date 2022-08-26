@@ -7,8 +7,9 @@ use omt::util::OmError;
 
 fn main() {
 // omt-atlas combine --output test-atlas-%d --size 2048 --border 0 --input ../Content/test.png
+	const VERSION: &str = env!("CARGO_PKG_VERSION");
 	let matches = App::new("omt-atlas")
-					.version("0.2")
+					.version(VERSION)
 					.author("Andreas N. <andreas@omni-mad.com>")
 					.about("Handles atlases")
 					.subcommand(SubCommand::with_name("combine")

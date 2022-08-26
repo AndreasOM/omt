@@ -4,8 +4,9 @@ use std::process;
 use omt::script::Script;
 
 fn main() {
+	const VERSION: &str = env!("CARGO_PKG_VERSION");
 	let matches = App::new("omt-script")
-					.version("0.1")
+					.version(VERSION)
 					.author("Andreas N. <andreas@omni-mad.com>")
 					.about("Handles scripts")
 					.subcommand(SubCommand::with_name("build")

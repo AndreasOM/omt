@@ -6,8 +6,9 @@ use omt::asset::AssetBuilder;
 fn main() {
 // omt-asset build --content-directory Content --temp-directory Temp --data-directory Data --archive App/data/base.omar --paklist Data/data.paklist
 
+	const VERSION: &str = env!("CARGO_PKG_VERSION");
 	let matches = App::new("omt-asset")
-					.version("0.1")
+					.version(VERSION)
 					.author("Andreas N. <andreas@omni-mad.com>")
 					.about("Handles assets")
 					.subcommand(SubCommand::with_name("build")

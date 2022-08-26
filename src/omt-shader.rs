@@ -4,8 +4,9 @@ use std::process;
 use omt::shader::Shader;
 
 fn main() {
+	const VERSION: &str = env!("CARGO_PKG_VERSION");
 	let matches = App::new("omt-shader")
-					.version("0.1")
+					.version(VERSION)
 					.author("Andreas N. <andreas@omni-mad.com>")
 					.about("Handles shaders")
 					.subcommand(SubCommand::with_name("build")

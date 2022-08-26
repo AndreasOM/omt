@@ -4,8 +4,9 @@ use std::process;
 use omt::packer::Packer;
 
 fn main() {
+	const VERSION: &str = env!("CARGO_PKG_VERSION");
 	let matches = App::new("omt-packer")
-					.version("0.3")
+					.version(VERSION)
 					.author("Andreas N. <andreas@omni-mad.com>")
 					.about("Packs data into archive, or unpacks data from archive")
 					.subcommand(SubCommand::with_name("pack")

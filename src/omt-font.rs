@@ -9,8 +9,9 @@ fn main() {
 //		${madfonter} $TEXSIZE $SIZE "${TTF}" ${TMP_DIR}/${NAME}.tga ${TMP_DIR}/${NAME}.omfont
 // omt-font create --output test-font --texsize 1024 --size 40 --ttf test.ttf
 
+	const VERSION: &str = env!("CARGO_PKG_VERSION");
 	let matches = App::new("omt-font")
-					.version("0.1")
+					.version(VERSION)
 					.author("Andreas N. <andreas@omni-mad.com>")
 					.about("Handles fonts")
 					.subcommand(SubCommand::with_name("create")
