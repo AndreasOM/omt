@@ -3,7 +3,6 @@ use std::process;
 use clap::{App, Arg, SubCommand};
 use omt::font::Font;
 use omt::font::FontPreviewer;
-use omt::util::OmError;
 
 fn main() {
 	//		${madfonter} $TEXSIZE $SIZE "${TTF}" ${TMP_DIR}/${NAME}.tga ${TMP_DIR}/${NAME}.omfont
@@ -189,11 +188,7 @@ fn main() {
 				process::exit(0);
 			},
 			Err(e) => {
-				println!("Error getting info from font.");
-				match e {
-					OmError::NotImplemented(e) => println!("NotImplemented: {:?}", e),
-					OmError::Generic(e) => println!("Generic: {:?}", e),
-				};
+				println!("Error getting info from font. {}", &e);
 				process::exit(-1);
 			},
 		}

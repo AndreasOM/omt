@@ -7,7 +7,6 @@ use om_fork_distance_field::DistanceFieldExt;
 use rusttype::{point, FontCollection, Scale};
 
 use crate::atlas::AtlasFitter;
-use crate::util::OmError;
 
 #[derive(Debug, Copy, Clone)]
 pub struct Glyph {
@@ -103,10 +102,10 @@ impl Font {
 		}
 	}
 
-	fn load_omfont_v2(&mut self, filename: &str) -> Result<u32, OmError> {
+	fn load_omfont_v2(&mut self, filename: &str) -> anyhow::Result<u32> {
 		let f = match File::open(filename) {
 			Ok(f) => f,
-			Err(_) => return Err(OmError::Generic("io".to_string())),
+			Err(_) => anyhow::bail!("io"),
 		};
 
 		let mut bufreader = BufReader::new(f);
@@ -114,12 +113,12 @@ impl Font {
 		for m in &chunk_magic {
 			let b = bufreader.read_u8().unwrap_or(0);
 			if b != *m {
-				return Err(OmError::Generic("Broken chunk magic".to_string()));
+				anyhow::bail!("Broken chunk magic");
 			}
 		}
 		let version = bufreader.read_u32::<LittleEndian>().unwrap_or(0);
 		if version != 2 {
-			return Err(OmError::Generic("Unsupported version".to_string()));
+			anyhow::bail!("Unsupported version");
 		}
 
 		self.size = bufreader.read_u16::<LittleEndian>().unwrap_or(0) as u32;
@@ -147,10 +146,10 @@ impl Font {
 		Ok(0)
 	}
 
-	fn load_omfont(&mut self, filename: &str) -> Result<u32, OmError> {
+	fn load_omfont(&mut self, filename: &str) -> anyhow::Result<u32> {
 		let f = match File::open(filename) {
 			Ok(f) => f,
-			Err(_) => return Err(OmError::Generic("io".to_string())),
+			Err(_) => anyhow::bail!("io"),
 		};
 
 		let mut bufreader = BufReader::new(f);
@@ -159,12 +158,12 @@ impl Font {
 			Ok(m) => m,
 			x => {
 				println!("{:?}", x);
-				return Err(OmError::Generic("reading from buffer".to_string()));
+				anyhow::bail!("reading from buffer");
 			},
 		};
 		if magic != 0x4e464d4f {
 			println!("Got magic {:#08x} from {:?}", magic, bufreader);
-			return Err(OmError::Generic("Broken file magic".to_string()));
+			anyhow::bail!("Broken file magic");
 		}
 
 		let _height = bufreader.read_u32::<LittleEndian>().unwrap_or(0);
@@ -367,7 +366,7 @@ impl Font {
 		true
 	}
 
-	pub fn load(name: &str) -> Result<Font, OmError> {
+	pub fn load(name: &str) -> anyhow::Result<Font> {
 		let pngname = format!("{}.png", name);
 		let img = image::open(&pngname).unwrap();
 		if img.dimensions().0 != img.dimensions().1 {
@@ -375,9 +374,7 @@ impl Font {
 				"Error: Non-square texture for font found with dimensions {:?}",
 				img.dimensions()
 			);
-			return Err(OmError::Generic(
-				"Error: Non-square texture for font".to_string(),
-			));
+			anyhow::bail!("Error: Non-square texture for font");
 		}
 
 		let texsize = img.dimensions().0;
@@ -390,10 +387,10 @@ impl Font {
 		//		Err( OmError::Generic( "Font::load not implemented".to_string() ) )
 		Ok(font)
 	}
-	fn save_omfont_v2(&self, filename: &str) -> Result<u32, OmError> {
+	fn save_omfont_v2(&self, filename: &str) -> anyhow::Result<u32> {
 		let mut f = match File::create(filename) {
 			Ok(f) => f,
-			Err(_) => return Err(OmError::Generic("io".to_string())),
+			Err(_) => anyhow::bail!("io"),
 		};
 		f.write_all(&[
 			0x4f, 0x4d, 0x46, 0x4f, 0x4e, 0x54, // OMFONT
@@ -422,10 +419,10 @@ impl Font {
 	}
 
 	#[allow(dead_code)]
-	fn save_omfont(&self, filename: &str) -> Result<u32, OmError> {
+	fn save_omfont(&self, filename: &str) -> anyhow::Result<u32> {
 		let mut f = match File::create(filename) {
 			Ok(f) => f,
-			Err(_) => return Err(OmError::Generic("io".to_string())),
+			Err(_) => anyhow::bail!("io"),
 		};
 		f.write_all(&[
 			0x4f, 0x4d, 0x46, 0x4e, // OMFN
@@ -436,7 +433,7 @@ impl Font {
 
 		if self.glyphs.len() != 128 {
 			println!("Wrong number of glyphs {} expected 128", self.glyphs.len());
-			return Err(OmError::Generic("Wrong number of glyphs".to_string()));
+			anyhow::bail!("Wrong number of glyphs");
 		}
 
 		for g in &self.glyphs {
@@ -495,12 +492,12 @@ impl Font {
 		distancefield_scale: u16,
 		distancefield_max_distance: u16,
 		input: &Vec<&str>,
-	) -> Result<u32, OmError> {
+	) -> anyhow::Result<u32> {
 		// load ttf
 		// :TODO: load all input fonts!
 		let mut f = match File::open(input[0]) {
 			Ok(f) => f,
-			Err(_) => return Err(OmError::Generic("io".to_string())),
+			Err(_) => anyhow::bail!("io"),
 		};
 
 		let mut buffer = Vec::new();
@@ -574,14 +571,10 @@ impl Font {
 		println!("CNT {:?}", cnt);
 
 		if !the_font.fit_glyphs() {
-			return Err(OmError::Generic(
-				"Failed to fit glyphs into texture".to_string(),
-			));
+			anyhow::bail!("Failed to fit glyphs into texture");
 		}
 		if !the_font.blit_glyphs(font, distancefield_scale, distancefield_max_distance) {
-			return Err(OmError::Generic(
-				"Failed to blitting glyphs into texture".to_string(),
-			));
+			anyhow::bail!("Failed to blitting glyphs into texture");
 		}
 		the_font.recalc_matrix(texsize);
 		//		println!("the font: {:#?}", the_font );
