@@ -7,7 +7,7 @@ use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 
 #[derive(Debug, Default)]
 struct Entry {
-//	basepath: String,
+	//	basepath: String,
 	filename: String,
 	crc:      u32,
 	size:     u32,
@@ -52,10 +52,10 @@ impl Entry {
 		//	      puts "CRC: " + filename + " -> " + name + " crc: " + @crc.to_s
 
 		Entry {
-//			basepath: basepath.to_string(),
+			//			basepath: basepath.to_string(),
 			filename: filename.to_string(),
-			crc:      crc,
-			size:     size,
+			crc: crc,
+			size: size,
 			..Default::default()
 		}
 	}
@@ -64,9 +64,9 @@ impl Entry {
 		Entry {
 			//basepath: String::new(),
 			filename: String::new(),
-			crc:      crc,
-			size:     size,
-			pos:      pos,
+			crc: crc,
+			size: size,
+			pos: pos,
 			..Default::default()
 		}
 	}

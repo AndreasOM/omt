@@ -15,7 +15,7 @@ impl Xcassets {
 			Err(e) => {
 				println!("ERROR: AppIconSet::load failed with {:?}", e);
 				anyhow::bail!("problem with output file");
-//				return Err(OmError::Generic("problem with output file".to_string()));
+				//				return Err(OmError::Generic("problem with output file".to_string()));
 			},
 		};
 
@@ -125,7 +125,7 @@ impl Xcassets {
 			//			println!("{:#?}", app_icon_set);
 			match app_icon_set.save(&content_json_filename) {
 				Ok(_) => {},
-//				Err(_e) => return Err(OmError::Generic("Error saving app icon set".to_string())),
+				//				Err(_e) => return Err(OmError::Generic("Error saving app icon set".to_string())),
 				Err(_e) => anyhow::bail!("Error saving app icon set"),
 			}
 		}

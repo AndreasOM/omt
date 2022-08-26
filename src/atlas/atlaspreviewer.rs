@@ -5,7 +5,6 @@ use minifb::{Key, Window, WindowOptions};
 
 use crate::atlas::Atlas;
 use crate::gfx::DrawBuffer;
-use crate::util::OmError;
 
 pub struct AtlasPreviewer {}
 
@@ -14,7 +13,7 @@ const WIDTH: usize = SIZE;
 const HEIGHT: usize = SIZE;
 //const GRID_SIZE: usize = 64;
 impl AtlasPreviewer {
-	pub fn preview(input: &str) -> Result<u32, OmError> {
+	pub fn preview(input: &str) -> anyhow::Result<u32> {
 		let start_time = SystemTime::now();
 		let mut scale; // = 1.0;
 			   //		let mut frame_col: u32 = 0xa020a0ff;
@@ -24,7 +23,7 @@ impl AtlasPreviewer {
 
 		let n = atlases.len() as u32;
 		if n == 0 {
-			Err(OmError::Generic("No matching atlas found.".to_string()))
+			anyhow::bail!("No matching atlas found.")
 		} else {
 			let mut prev_active_atlas = 0xffffffff;
 			let active_atlas = 0; // :TODO make mut once we allow atlas switching

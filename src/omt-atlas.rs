@@ -3,9 +3,8 @@ use std::process;
 use clap::{App, Arg, SubCommand};
 use omt::atlas::Atlas;
 use omt::atlas::AtlasPreviewer;
-use omt::util::OmError;
 
-fn main() {
+fn main() -> anyhow::Result<()> {
 	// omt-atlas combine --output test-atlas-%d --size 2048 --border 0 --input ../Content/test.png
 	const VERSION: &str = env!("CARGO_PKG_VERSION");
 	let matches = App::new("omt-atlas")
@@ -125,11 +124,7 @@ fn main() {
 				process::exit(0);
 			},
 			Err(e) => {
-				println!("Error getting info from  atlas.");
-				match e {
-					OmError::NotImplemented(e) => println!("NotImplemented: {:?}", e),
-					OmError::Generic(e) => println!("Generic: {:?}", e),
-				};
+				println!("Error getting info from atlas: {}", &e);
 				process::exit(-1);
 			},
 		}
@@ -145,14 +140,10 @@ fn main() {
 				process::exit(0);
 			},
 			Err(e) => {
-				println!("Error getting info from  atlas.");
-				match e {
-					OmError::NotImplemented(e) => println!("NotImplemented: {:?}", e),
-					OmError::Generic(e) => println!("Generic: {:?}", e),
-				};
+				println!("Error getting info from atlas: {}", &e);
 				process::exit(-1);
 			},
 		}
 	}
-	process::exit(-1);
+	Ok(())
 }

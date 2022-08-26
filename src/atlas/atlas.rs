@@ -7,7 +7,6 @@ use image::{DynamicImage, GenericImage, GenericImageView, ImageFormat};
 use regex::Regex;
 
 use crate::atlas::AtlasFitter;
-use crate::util::OmError;
 
 #[derive(Clone)]
 pub struct Entry {
@@ -202,7 +201,7 @@ impl Atlas {
 		}
 	}
 
-	fn save_png(&self, filename: &str) -> Result<u32, OmError> {
+	fn save_png(&self, filename: &str) -> anyhow::Result<()> {
 		//		Err( OmError::NotImplemented("Atlas::save_png".to_string()))
 		match self
 			.image
@@ -210,14 +209,14 @@ impl Atlas {
 			.unwrap()
 			.save_with_format(filename, ImageFormat::Png)
 		{
-			_ => Ok(0),
+			_ => Ok(()),
 		}
 	}
 
-	fn load_atlas(&mut self, filename: &str, size: u32) -> Result<u32, OmError> {
+	fn load_atlas(&mut self, filename: &str, size: u32) -> anyhow::Result<()> {
 		let f = match File::open(filename) {
 			Ok(f) => f,
-			Err(_) => return Err(OmError::Generic("io".to_string())),
+			Err(_) => anyhow::bail!("io"),
 		};
 
 		let mut bufreader = BufReader::new(f);
@@ -226,35 +225,33 @@ impl Atlas {
 			Ok(m) => m,
 			x => {
 				println!("{:?}", x);
-				return Err(OmError::Generic("reading from buffer".to_string()));
+				anyhow::bail!("reading from buffer");
 			},
 		};
 		if magic != 0x4f53 {
 			println!("Got magic {:?} from {:?}", magic, bufreader);
-			return Err(OmError::Generic("Broken file magic".to_string()));
+			anyhow::bail!("Broken file magic");
 		}
 		let v = bufreader.read_u16::<LittleEndian>().unwrap_or(0);
 		if v != 1 {
-			return Err(OmError::Generic("Wrong version".to_string()));
+			anyhow::bail!("Wrong version");
 		}
 		let chunk_magic = [0x4fu8, 0x4d, 0x41, 0x54, 0x4c, 0x41, 0x53];
 		for m in &chunk_magic {
 			let b = bufreader.read_u8().unwrap_or(0);
 			if b != *m {
-				return Err(OmError::Generic("Broken chunk magic".to_string()));
+				anyhow::bail!("Broken chunk magic");
 			}
 		}
 		let flags = bufreader.read_u8().unwrap_or(0);
 		if flags != 'S' as u8 {
-			return Err(OmError::Generic(
-				":TODO: compression not implemented".to_string(),
-			));
+			anyhow::bail!(":TODO: compression not implemented");
 		}
 		let chunk_version = [0x01u8, 0x00, 0x00, 0x00];
 		for m in &chunk_version {
 			let b = bufreader.read_u8().unwrap_or(0);
 			if b != *m {
-				return Err(OmError::Generic("Broken chunk version".to_string()));
+				anyhow::bail!("Broken chunk version");
 			}
 		}
 		let entry_count = bufreader.read_u16::<LittleEndian>().unwrap_or(0);
@@ -280,14 +277,14 @@ impl Atlas {
 			e.set_position(x, y);
 			self.entries.push(e);
 		}
-		Ok(0)
+		Ok(())
 	}
 
 	// :TODO: support compression
-	fn save_atlas(&self, filename: &str) -> Result<u32, OmError> {
+	fn save_atlas(&self, filename: &str) -> anyhow::Result<()> {
 		let mut f = match File::create(filename) {
 			Ok(f) => f,
-			Err(_) => return Err(OmError::Generic("io".to_string())),
+			Err(_) => anyhow::bail!("io"),
 		};
 		f.write_u16::<LittleEndian>(0x4f53).unwrap();
 		f.write_u16::<LittleEndian>(0x0001).unwrap();
@@ -326,13 +323,13 @@ impl Atlas {
 				f.write_f32::<LittleEndian>(*mm).unwrap();
 			}
 		}
-		Ok(0)
+		Ok(())
 	}
 
-	fn save_map(&self, filename: &str) -> Result<u32, OmError> {
+	fn save_map(&self, filename: &str) -> anyhow::Result<()> {
 		let mut f = match File::create(filename) {
 			Ok(f) => f,
-			Err(_) => return Err(OmError::Generic("io".to_string())),
+			Err(_) => anyhow::bail!("io"),
 		};
 
 		//		println!("{:?}", self );
@@ -352,7 +349,7 @@ impl Atlas {
 			//			println!("{}", l);
 			write!(f, "{}", l).unwrap();
 		}
-		Ok(0)
+		Ok(())
 	}
 
 	pub fn hello() {
@@ -395,7 +392,7 @@ impl Atlas {
 		result
 	}
 
-	pub fn info(input: &str) -> Result<u32, OmError> {
+	pub fn info(input: &str) -> anyhow::Result<u32> {
 		let atlases = Atlas::all_for_template(&input);
 
 		for a in &atlases {
@@ -424,18 +421,13 @@ impl Atlas {
 
 		let n = atlases.len() as u32;
 		if n == 0 {
-			Err(OmError::Generic("No matching atlas found.".to_string()))
+			anyhow::bail!("No matching atlas found.");
 		} else {
 			Ok(n)
 		}
 	}
 
-	pub fn combine(
-		output: &str,
-		size: u32,
-		border: u32,
-		input: &Vec<&str>,
-	) -> Result<u32, OmError> {
+	pub fn combine(output: &str, size: u32, border: u32, input: &Vec<&str>) -> anyhow::Result<u32> {
 		let mut entries = Vec::new();
 		// collect inputs
 		for i in input {

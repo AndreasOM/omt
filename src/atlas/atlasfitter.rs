@@ -80,7 +80,7 @@ impl Row {
 #[derive(Debug, Default)]
 pub struct Page {
 	size:        u32,
-//	border:      u32,
+	//	border:      u32,
 	pub entries: Vec<EntryWithPosition>,
 	rows:        Vec<Row>,
 	used_height: u32,
@@ -89,8 +89,8 @@ pub struct Page {
 impl Page {
 	pub fn new(size: u32, _border: u32) -> Page {
 		Page {
-			size:        size,
-//			border:      border,
+			size: size,
+			//			border:      border,
 			..Default::default()
 		}
 	}
