@@ -2,15 +2,13 @@ use std::fs;
 
 use rlua::Lua;
 
-use crate::util::OmError;
-
 pub struct Script {}
 
 impl Script {
-	pub fn build(input: &str, _mode: &str, output: &str) -> Result<u32, OmError> {
+	pub fn build(input: &str, _mode: &str, output: &str) -> anyhow::Result<u32> {
 		let data = match fs::read_to_string(input) {
 			Ok(data) => data,
-			Err(e) => return Err(OmError::Generic(e.to_string())),
+			Err(e) => anyhow::bail!(e),
 		};
 
 		let lua = Lua::new();
@@ -29,7 +27,7 @@ impl Script {
 				return Ok(1);
 			},
 			Err(_e) => {
-				return Err(OmError::Generic("Error in script".to_string()));
+				anyhow::bail!("Error in script");
 			},
 		};
 	}

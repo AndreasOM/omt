@@ -4,7 +4,6 @@ use std::str::FromStr;
 
 use byteorder::{LittleEndian, WriteBytesExt};
 
-use crate::util::OmError;
 use crate::util::{CrcHelper, FileHelper};
 
 #[derive(Debug, Clone)]
@@ -67,10 +66,10 @@ impl Soundbank {
 		self.entries.push(entry.clone());
 	}
 
-	fn save_sbk(&self, filename: &str) -> Result<u32, OmError> {
+	fn save_sbk(&self, filename: &str) -> anyhow::Result<u32> {
 		let mut f = match File::create(filename) {
 			Ok(f) => f,
-			Err(_) => return Err(OmError::Generic("io".to_string())),
+			Err(_) => anyhow::bail!("io"),
 		};
 		f.write_u16::<LittleEndian>(0x4f53).unwrap();
 		f.write_u16::<LittleEndian>(0x0001).unwrap();
@@ -139,10 +138,10 @@ impl Soundbank {
 		Ok(0)
 	}
 
-	fn save_header(&self, filename: &str) -> Result<u32, OmError> {
+	fn save_header(&self, filename: &str) -> anyhow::Result<u32> {
 		let mut f = match File::create(filename) {
 			Ok(f) => f,
-			Err(_) => return Err(OmError::Generic("io".to_string())),
+			Err(_) => anyhow::bail!("io"),
 		};
 		write!(&mut f, "#pragma once\n").unwrap();
 		write!(&mut f, "namespace om\n{{\n").unwrap();
@@ -164,9 +163,9 @@ impl Soundbank {
 		Ok(0)
 	}
 
-	pub fn build(output: &str, input: &str, header: &str, use_version: u8) -> Result<u32, OmError> {
+	pub fn build(output: &str, input: &str, header: &str, use_version: u8) -> anyhow::Result<u32> {
 		let lines = match FileHelper::lines_in_file(input) {
-			Err(e) => return Err(OmError::Generic(e.to_string())),
+			Err(e) => anyhow::bail!(e),
 			Ok(l) => l,
 		};
 

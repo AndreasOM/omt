@@ -202,7 +202,6 @@ impl Atlas {
 	}
 
 	fn save_png(&self, filename: &str) -> anyhow::Result<()> {
-		//		Err( OmError::NotImplemented("Atlas::save_png".to_string()))
 		match self
 			.image
 			.as_ref()
@@ -487,7 +486,7 @@ impl Atlas {
 				let mut a = Atlas::new( size, border );
 				if !a.add_entry( &e ) {
 					println!("‼️ Image doesn't fit into empty atlas {:?}", e );
-					return Err(OmError::Generic("‼️ Image doesn't fit into empty atlas".to_string()));
+					anyhow::bail!("‼️ Image doesn't fit into empty atlas");
 				}
 				atlases.push( a );
 			}

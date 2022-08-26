@@ -97,11 +97,7 @@ fn main() {
 					process::exit( 0 );
 				},
 				Err( e ) => {
-					println!("Error getting info from  atlas." );
-					match e {
-						OmError::NotImplemented( e ) => println!("NotImplemented: {:?}", e ),
-						OmError::Generic( e ) => println!("Generic: {:?}", e ),
-					};
+					println!("Error getting info from  atlas: {}", &e );
 					process::exit( -1 );
 				}
 			}

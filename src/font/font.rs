@@ -384,7 +384,7 @@ impl Font {
 
 		font.image = img;
 
-		//		Err( OmError::Generic( "Font::load not implemented".to_string() ) )
+		//		anyhow::bail!( "Font::load not implemented")
 		Ok(font)
 	}
 	fn save_omfont_v2(&self, filename: &str) -> anyhow::Result<u32> {
@@ -503,7 +503,7 @@ impl Font {
 		let mut buffer = Vec::new();
 
 		// read the whole file
-		f.read_to_end(&mut buffer).unwrap(); //_or_else( return Err(OmError::Generic( "Error reading font file".to_string() )));
+		f.read_to_end(&mut buffer).unwrap(); //_or_else( anyhow::bail!( "Error reading font file");
 
 		let collection = FontCollection::from_bytes(&buffer[..] as &[u8]).unwrap_or_else(|e| {
 			panic!("error constructing a FontCollection from bytes: {}", e);

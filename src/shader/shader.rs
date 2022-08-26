@@ -2,8 +2,6 @@ use std::fs;
 
 use shader_crusher::ShaderCrusher;
 
-use crate::util::OmError;
-
 pub struct Shader {}
 
 impl Shader {
@@ -11,11 +9,11 @@ impl Shader {
 		input: &str,
 		_mode: &str, // :TODO:
 		output: &str,
-	) -> Result<u32, OmError> {
+	) -> anyhow::Result<u32> {
 		let mut sc = ShaderCrusher::new();
 		let data = match fs::read_to_string(input) {
 			Ok(data) => data,
-			Err(e) => return Err(OmError::Generic(e.to_string())),
+			Err(e) => anyhow::bail!(e),
 		};
 
 		sc.set_input(&data);
@@ -28,7 +26,7 @@ impl Shader {
 			//			fs::write(output, sc.get_output()).expect("// Unable to write file");
 			return Ok(1);
 		} else {
-			return Err(OmError::Generic("Error in shader".to_string()));
+			anyhow::bail!("Error in shader");
 		}
 	}
 }
