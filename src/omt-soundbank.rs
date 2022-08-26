@@ -45,7 +45,7 @@ fn main() {
 					)
 					.get_matches();
 
-	if let ("build", Some( sub_matches ) ) = matches.subcommand() {
+	if let Some( ("build", sub_matches ) ) = matches.subcommand() {
 		let output = sub_matches.value_of("output").unwrap_or("test.sbk").to_string();
 		let input = sub_matches.value_of("input").unwrap_or("test.soundbank").to_string();
 		let output_header = sub_matches.value_of("output-header").unwrap_or("").to_string();

@@ -199,7 +199,7 @@ impl Atlas {
 
 	fn save_png( &self, filename: &str ) -> Result< u32, OmError > {
 //		Err( OmError::NotImplemented("Atlas::save_png".to_string()))
-		match self.image.as_ref().unwrap().save_with_format(filename, ImageFormat::PNG) {
+		match self.image.as_ref().unwrap().save_with_format(filename, ImageFormat::Png) {
 			_ => Ok( 0 )
 		}
 	}

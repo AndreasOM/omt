@@ -68,7 +68,7 @@ fn main() {
 					)
 					.get_matches();
 
-	if let ("create", Some( sub_matches ) ) = matches.subcommand() {
+	if let Some( ("create", sub_matches ) ) = matches.subcommand() {
 		let output			= sub_matches.value_of("output").unwrap_or("output-font").to_string();
 		let texsize 		= sub_matches.value_of("texsize").unwrap_or("1024").to_string();
 		let size			= sub_matches.value_of("size").unwrap_or("16").to_string();
@@ -145,7 +145,7 @@ fn main() {
 			}
 		}
 	}
-	if let ("preview", Some( sub_matches ) ) = matches.subcommand() {
+	if let Some( ("preview", sub_matches ) ) = matches.subcommand() {
 		let input = sub_matches.value_of("input").unwrap_or("output-font").to_string();
 		println!("input         : {:?}", input );
 		match FontPreviewer::preview( &input ) {

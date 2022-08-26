@@ -53,7 +53,7 @@ fn main() {
 //	println!("{:?}", matches);
 //	println!("{:?}", matches.subcommand());
 
-	if let ("build", Some( sub_matches ) ) = matches.subcommand() {
+	if let Some( ("build", sub_matches ) ) = matches.subcommand() {
 		let content_directory = sub_matches.value_of("content-directory").unwrap_or(".").to_string();
 		let data_directory = sub_matches.value_of("data-directory").unwrap_or(".").to_string();
 		let temp_directory = sub_matches.value_of("temp-directory").unwrap_or(".").to_string();

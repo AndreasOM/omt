@@ -47,7 +47,7 @@ fn main() {
 //	println!("{:?}", matches);
 //	println!("{:?}", matches.subcommand());
 
-	if let ("pack", Some( sub_matches ) ) = matches.subcommand() {
+	if let Some( ("pack", sub_matches ) ) = matches.subcommand() {
 		let basepath = sub_matches.value_of("basepath").unwrap_or(".").to_string();
 		let output = sub_matches.value_of("output").unwrap_or("out.omar").to_string();
 		let paklist = sub_matches.value_of("paklist").unwrap_or("").to_string();
@@ -68,7 +68,7 @@ fn main() {
 		}
 	}
 
-	if let ("unpack", Some( sub_matches ) ) = matches.subcommand() {
+	if let Some(("unpack",sub_matches ) ) = matches.subcommand() {
 		let targetpath = sub_matches.value_of("targetpath").unwrap_or(".").to_string();
 		let input = sub_matches.value_of("input").unwrap_or("in.omar").to_string();
 

@@ -8,7 +8,7 @@ use std::io::{BufReader, Read, Write};
 
 use image::{ DynamicImage, ImageFormat, GenericImage, GenericImageView };
 use rusttype::{point, FontCollection, Scale};
-use distance_field::DistanceFieldExt;
+use om_fork_distance_field::DistanceFieldExt;
 
 #[derive(Debug,Copy,Clone)]
 pub struct Glyph {
@@ -329,7 +329,7 @@ impl Font {
 							let h = ( h as f32 * downscale_factor ) as u32;
 							let max_distance = distancefield_max_distance as u32 * scale_factor as u32;
 
-							let distance_field = glyph_image.grayscale().distance_field(distance_field::Options {
+							let distance_field = glyph_image.grayscale().distance_field(om_fork_distance_field::Options {
 								size: ( w, h ),
 								max_distance: max_distance as u16,
 								..Default::default()
@@ -565,7 +565,7 @@ impl Font {
 
 		let filename = format!("{}.png", output );
 		println!("Writing texture to {}", filename );
-		the_font.image.save_with_format( filename, ImageFormat::PNG ).unwrap();
+		the_font.image.save_with_format( filename, ImageFormat::Png ).unwrap();
 
 		let filename = format!("{}.omfont", output );
 		println!("Writing font data to {}", filename );

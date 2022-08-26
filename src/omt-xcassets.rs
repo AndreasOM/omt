@@ -33,7 +33,7 @@ fn main() {
 //	println!("{:?}", matches);
 //	println!("{:?}", matches.subcommand());
 
-	if let ("generate", Some( sub_matches ) ) = matches.subcommand() {
+	if let Some( ("generate", sub_matches ) ) = matches.subcommand() {
 		let mode		= sub_matches.value_of("mode").unwrap_or("fill").to_string();
 		let output		= sub_matches.value_of("output").unwrap_or("").to_string();
 		let input		= sub_matches.value_of("input").unwrap_or("").to_string();

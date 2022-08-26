@@ -56,7 +56,7 @@ fn main() {
 					)
 					.get_matches();
 
-	if let ("combine", Some( sub_matches ) ) = matches.subcommand() {
+	if let Some(("combine", sub_matches ) ) = matches.subcommand() {
 		let output = sub_matches.value_of("output").unwrap_or("output-atlas-%d").to_string();
 		let size   = sub_matches.value_of("size").unwrap_or("2048").to_string();
 		let border = sub_matches.value_of("border").unwrap_or("0").to_string();
@@ -104,7 +104,7 @@ fn main() {
 		}
 
 	}
-	if let ("info", Some( sub_matches ) ) = matches.subcommand() {
+	if let Some(("info", sub_matches ) ) = matches.subcommand() {
 		let input = sub_matches.value_of("input").unwrap_or("input-atlas-%d").to_string();
 		println!("input         : {:?}", input );
 		match Atlas::info( &input ) {
@@ -121,7 +121,7 @@ fn main() {
 			}
 		}
 	}
-	if let ("preview", Some( sub_matches ) ) = matches.subcommand() {
+	if let Some(("preview", sub_matches ) ) = matches.subcommand() {
 		let input = sub_matches.value_of("input").unwrap_or("input-atlas-%d").to_string();
 		println!("input         : {:?}", input );
 		match AtlasPreviewer::preview( &input ) {
