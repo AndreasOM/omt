@@ -1,5 +1,5 @@
 mod font;
-pub use font::Font as Font;
+pub use font::Font;
 
 mod fontpreviewer;
-pub use fontpreviewer::FontPreviewer as FontPreviewer;
+pub use fontpreviewer::FontPreviewer;

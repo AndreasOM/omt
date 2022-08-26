@@ -1,2 +1,2 @@
 mod script;
-pub use script::Script as Script;
+pub use script::Script;

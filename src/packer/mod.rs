@@ -1,2 +1,2 @@
 mod packer;
-pub use packer::Packer as Packer;
+pub use packer::Packer;

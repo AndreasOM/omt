@@ -1,2 +1,2 @@
 mod assetbuilder;
-pub use assetbuilder::AssetBuilder as AssetBuilder;
+pub use assetbuilder::AssetBuilder;

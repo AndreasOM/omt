@@ -1,2 +1,2 @@
 mod shader;
-pub use shader::Shader as Shader;
+pub use shader::Shader;

@@ -1,2 +1,2 @@
 mod soundbank;
-pub use soundbank::Soundbank as Soundbank;
+pub use soundbank::Soundbank;

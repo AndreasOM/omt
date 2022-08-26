@@ -1,8 +1,8 @@
 mod atlas;
-pub use atlas::Atlas as Atlas;
+pub use atlas::Atlas;
 
 mod atlaspreviewer;
-pub use atlaspreviewer::AtlasPreviewer as AtlasPreviewer;
+pub use atlaspreviewer::AtlasPreviewer;
 
 mod atlasfitter;
-pub use atlasfitter::AtlasFitter as AtlasFitter;
+pub use atlasfitter::AtlasFitter;

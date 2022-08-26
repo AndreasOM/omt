@@ -1,5 +1,5 @@
 mod drawbuffer;
-pub use drawbuffer::DrawBuffer as DrawBuffer;
+pub use drawbuffer::DrawBuffer;
 
 #[cfg(test)]
 mod test_drawbuffer;

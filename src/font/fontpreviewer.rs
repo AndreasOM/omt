@@ -1,43 +1,39 @@
-use crate::util::OmError;
-
-use crate::font::Font;
-use crate::gfx::DrawBuffer;
+use std::time::SystemTime;
 
 use image::GenericImageView;
 use minifb::{Key, Window, WindowOptions};
-use std::time::SystemTime;
 
-pub struct FontPreviewer {
+use crate::font::Font;
+use crate::gfx::DrawBuffer;
+use crate::util::OmError;
 
-}
+pub struct FontPreviewer {}
 
 const SIZE: usize = 1024;
 const WIDTH: usize = SIZE;
 const HEIGHT: usize = SIZE;
 //const GRID_SIZE: usize = 64;
 impl FontPreviewer {
-
-	pub fn preview(
-		input: &str
-	) -> Result<u32,OmError>{
-
+	pub fn preview(input: &str) -> Result<u32, OmError> {
 		let start_time = SystemTime::now();
 		let mut scale; // = 1.0;
-//		let mut frame_col: u32 = 0xa020a0ff;
+			   //		let mut frame_col: u32 = 0xa020a0ff;
 
-		let font = match Font::load( &input ) {
-			Err( e ) => { return Err( e ); },
-			Ok( f ) => f,
+		let font = match Font::load(&input) {
+			Err(e) => {
+				return Err(e);
+			},
+			Ok(f) => f,
 		};
 
-//		println!("{:#?}", font );
+		//		println!("{:#?}", font );
 
 		{
 			// display
 
-			let mut grid_draw_buffer = DrawBuffer::new( WIDTH as u32, HEIGHT as u32);
-			let mut img_draw_buffer = DrawBuffer::new( WIDTH as u32, HEIGHT as u32);
-			let mut draw_buffer = DrawBuffer::new( WIDTH as u32, HEIGHT as u32);
+			let mut grid_draw_buffer = DrawBuffer::new(WIDTH as u32, HEIGHT as u32);
+			let mut img_draw_buffer = DrawBuffer::new(WIDTH as u32, HEIGHT as u32);
+			let mut draw_buffer = DrawBuffer::new(WIDTH as u32, HEIGHT as u32);
 
 			let mut window = Window::new(
 				"omt-font - preview - ESC to exit",
@@ -49,9 +45,9 @@ impl FontPreviewer {
 				panic!("{}", e);
 			});
 
-    		window.limit_update_rate(Some(std::time::Duration::from_micros(16600)));
+			window.limit_update_rate(Some(std::time::Duration::from_micros(16600)));
 
-    		grid_draw_buffer.fill_with_grid( 64, 0xaaaaaaaa, 0x00000000 );
+			grid_draw_buffer.fill_with_grid(64, 0xaaaaaaaa, 0x00000000);
 
 			while window.is_open() && !window.is_key_down(Key::Escape) {
 				let now = SystemTime::now();
@@ -60,68 +56,73 @@ impl FontPreviewer {
 
 				let is = font.image.dimensions().0 as f32;
 				scale = is / WIDTH as f32;
-//				println!("New atlas scale: {:?}", scale );
-				img_draw_buffer.set_scale( scale );
-				draw_buffer.set_scale( scale );
-				img_draw_buffer.copy_from_draw_buffer( &grid_draw_buffer );
-				img_draw_buffer.blit_image( &font.image );
+				//				println!("New atlas scale: {:?}", scale );
+				img_draw_buffer.set_scale(scale);
+				draw_buffer.set_scale(scale);
+				img_draw_buffer.copy_from_draw_buffer(&grid_draw_buffer);
+				img_draw_buffer.blit_image(&font.image);
 
-/*
-				if prev_active_atlas != active_atlas {
-					match atlases.get( active_atlas ) {
-						None => {},
-						Some( a ) => {
-//							println!("New active atlas {:?}", a );
-							prev_active_atlas = active_atlas;
-							match &a.image {
-								None => {
-									// :TODO: clear buffer
-								},
-								Some( i ) => {
-									// :TODO: calculate best scale
-									scale = 0.5;
+				/*
+								if prev_active_atlas != active_atlas {
+									match atlases.get( active_atlas ) {
+										None => {},
+										Some( a ) => {
+				//							println!("New active atlas {:?}", a );
+											prev_active_atlas = active_atlas;
+											match &a.image {
+												None => {
+													// :TODO: clear buffer
+												},
+												Some( i ) => {
+													// :TODO: calculate best scale
+													scale = 0.5;
 
-									// assumption texture is square
-									let is = i.dimensions().0 as f32;
-									scale = is / WIDTH as f32;
-									println!("New atlas scale: {:?}", scale );
-									img_draw_buffer.set_scale( scale );
-									draw_buffer.set_scale( scale );
-									img_draw_buffer.copy_from_draw_buffer( &grid_draw_buffer );
-									img_draw_buffer.blit_image( &i );
-								},
-							}							
-						}						
-					}
-				}
-*/
-				let m = 0.5 + 0.5 * ( time * 1.5 ).sin();
-				let frame_col = DrawBuffer::mix_rgba( 0x808080ff, 0x802080ff, m );
-				let baseline_col = DrawBuffer::mix_rgba( 0xffffffff, 0xe0e020ff, m );
-				draw_buffer.copy_from_draw_buffer( &img_draw_buffer );
+													// assumption texture is square
+													let is = i.dimensions().0 as f32;
+													scale = is / WIDTH as f32;
+													println!("New atlas scale: {:?}", scale );
+													img_draw_buffer.set_scale( scale );
+													draw_buffer.set_scale( scale );
+													img_draw_buffer.copy_from_draw_buffer( &grid_draw_buffer );
+													img_draw_buffer.blit_image( &i );
+												},
+											}
+										}
+									}
+								}
+				*/
+				let m = 0.5 + 0.5 * (time * 1.5).sin();
+				let frame_col = DrawBuffer::mix_rgba(0x808080ff, 0x802080ff, m);
+				let baseline_col = DrawBuffer::mix_rgba(0xffffffff, 0xe0e020ff, m);
+				draw_buffer.copy_from_draw_buffer(&img_draw_buffer);
 				for g in &font.glyphs {
-					let bs = ( 5.0 * draw_buffer.get_scale() ).trunc() as u32; 
-					draw_buffer.draw_frame( g.x as i32, g.y as i32, g.width, g.height, frame_col, bs );
+					let bs = (5.0 * draw_buffer.get_scale()).trunc() as u32;
+					draw_buffer
+						.draw_frame(g.x as i32, g.y as i32, g.width, g.height, frame_col, bs);
 				}
 				for g in &font.glyphs {
-					let bs = ( 2.0 * draw_buffer.get_scale() ).trunc() as u32; 
+					let bs = (2.0 * draw_buffer.get_scale()).trunc() as u32;
 					let y_offset = g.y_offset * font.image.dimensions().1 as f32;
 					println!("{:?} - {:?}", g.height, y_offset);
 					let h = g.height as f32;
 					let h = h - y_offset;
 					let h = h as u32;
-					draw_buffer.draw_frame( g.x as i32, g.y as i32, g.width, h, baseline_col, bs );
-//					draw_buffer.draw_hline( g.x, g.x + g.width, g.y + g.height - y_offset as u32, baseline_col );
+					draw_buffer.draw_frame(g.x as i32, g.y as i32, g.width, h, baseline_col, bs);
+					//					draw_buffer.draw_hline( g.x, g.x + g.width, g.y + g.height - y_offset as u32, baseline_col );
 				}
-//			draw_buffer.copy_from_draw_buffer( &img_draw_buffer );
+				//			draw_buffer.copy_from_draw_buffer( &img_draw_buffer );
 
-			// We unwrap here as we want this code to exit if it fails. Real applications may want to handle this in a different way
-			window
-				.update_with_buffer(draw_buffer.get_data(), draw_buffer.get_width() as usize, draw_buffer.get_height() as usize )
-				.unwrap();
+				// We unwrap here as we want this code to exit if it fails. Real applications may want to handle this in a different way
+				window
+					.update_with_buffer(
+						draw_buffer.get_data(),
+						draw_buffer.get_width() as usize,
+						draw_buffer.get_height() as usize,
+					)
+					.unwrap();
 			}
 
-			Ok( 0 )
+			Ok(0)
 		}
 	}
 }

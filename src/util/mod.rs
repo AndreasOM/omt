@@ -1,8 +1,8 @@
 mod omerror;
-pub use omerror::OmError as OmError;
+pub use omerror::OmError;
 
 mod filehelper;
-pub use filehelper::FileHelper as FileHelper;
+pub use filehelper::FileHelper;
 
 mod crchelper;
-pub use crchelper::CrcHelper as CrcHelper;
+pub use crchelper::CrcHelper;

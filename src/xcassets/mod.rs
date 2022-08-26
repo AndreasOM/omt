@@ -1,5 +1,5 @@
 mod xcassets;
-pub use xcassets::Xcassets as Xcassets;
+pub use xcassets::Xcassets;
 
 mod appiconset;
 pub use appiconset::AppIconSet as ApIconSet;
