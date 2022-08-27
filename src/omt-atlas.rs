@@ -17,14 +17,14 @@ struct Cli {
 enum Commands {
 	Combine {
 		#[clap(short, long, action)]
-		output: String, // :TODO: std::path::PathBuf,
+		output: std::path::PathBuf,
 		#[clap(short, long, action)]
 		size:   u32,
 		#[clap(short, long, action, default_value_t = 0)]
 		border: u32,
 		#[clap(short, long, min_values = 1, required = true)]
-		//		#[clap(short, long, required = true)]
-		input: Vec<String>, // :TODO: Vec<std::path::PathBuf>,
+		//		#[clap(short, long, required = true)] // use above, since this is not good enough
+		input: Vec<std::path::PathBuf>,
 	},
 	Info {
 		#[clap(short, long, action)]
@@ -63,10 +63,9 @@ fn main() -> anyhow::Result<()> {
 					}
 					println!("]");
 					match Atlas::combine(
-						&output,
-						size,
-						border,
-						&input.iter().map(String::as_str).collect(),
+						&output, size, border,
+						//&input.iter().map(String::as_str).collect(),
+						&input,
 					) {
 						Ok(1) => {
 							println!("1 atlas created");

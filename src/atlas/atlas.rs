@@ -1,6 +1,6 @@
 use std::fs::File;
 use std::io::{BufReader, Read, Write};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use image::{DynamicImage, GenericImage, GenericImageView, ImageFormat};
@@ -432,14 +432,25 @@ impl Atlas {
 		}
 	}
 
-	pub fn combine(output: &str, size: u32, border: u32, input: &Vec<&str>) -> anyhow::Result<u32> {
+	pub fn combine(
+		output: &PathBuf,
+		size: u32,
+		border: u32,
+		input: &Vec<PathBuf>,
+	) -> anyhow::Result<u32> {
 		let mut entries = Vec::new();
 		// collect inputs
 		for i in input {
 			println!("Analysing {:?}", i);
 			let img = image::open(i).unwrap();
 
-			let mut e = Entry::new(i, 0, 0);
+			let i_os_string = i.clone().into_os_string();
+			let i_string = match i_os_string.to_str() {
+				Some(s) => s,
+				None => anyhow::bail!("Error converting path to string"),
+			};
+
+			let mut e = Entry::new(i_string, 0, 0);
 			e.set_image(img);
 			entries.push(e);
 		}
@@ -500,9 +511,15 @@ impl Atlas {
 		*/
 		// write outputs
 		let mut n = 0;
+		let output_os_string = output.clone().into_os_string();
+		let output_string = match output_os_string.to_str() {
+			Some(s) => s,
+			None => anyhow::bail!("Error converting path to string"),
+		};
+
 		for a in atlases {
 			//			println!("Atlas #{} {:?}", n, a );
-			let outname = simple_format_u32(output, n); //format!(output, n);
+			let outname = simple_format_u32(&output_string, n); //format!(output, n);
 			let pngname = format!("{}.png", outname);
 			let atlasname = format!("{}.atlas", outname);
 			let mapname = format!("{}.map", outname);
