@@ -4,7 +4,7 @@ use std::io::{BufReader, Read, Write};
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use image::{DynamicImage, GenericImage, GenericImageView, ImageFormat};
 use om_fork_distance_field::DistanceFieldExt;
-use rusttype::{point, FontCollection, Scale};
+use rusttype::{point, Font as RTFont, Scale};
 
 use crate::atlas::AtlasFitter;
 
@@ -505,6 +505,10 @@ impl Font {
 		// read the whole file
 		f.read_to_end(&mut buffer).unwrap(); //_or_else( anyhow::bail!( "Error reading font file");
 
+		let font = RTFont::try_from_bytes(&buffer[..] as &[u8]).unwrap_or_else(|| {
+			panic!("error constructing a Font from bytes");
+		});
+		/*
 		let collection = FontCollection::from_bytes(&buffer[..] as &[u8]).unwrap_or_else(|e| {
 			panic!("error constructing a FontCollection from bytes: {}", e);
 		});
@@ -514,7 +518,7 @@ impl Font {
 			.unwrap_or_else(|e| {
 				panic!("error turning FontCollection into a Font: {}", e);
 			});
-
+		*/
 		let scale = Scale::uniform(size as f32); // :TODO: rusttype's understanding of size is different to our's!
 		let start = point(0.0, 0.0 /*+ v_metrics.ascent*/);
 
