@@ -60,6 +60,14 @@ impl Entry {
 			.unwrap();
 		basename.to_string()
 	}
+	fn get_stem(&self) -> String {
+		let stem = Path::new(&self.filename)
+			.file_stem()
+			.unwrap()
+			.to_str()
+			.unwrap();
+		stem.to_string()
+	}
 	/*
 			sx = s[ 0 ].to_f/size
 			sy = s[ 1 ].to_f/size
@@ -437,6 +445,7 @@ impl Atlas {
 		size: u32,
 		border: u32,
 		input: &Vec<PathBuf>,
+		reference_path: Option<&PathBuf>,
 	) -> anyhow::Result<u32> {
 		let mut entries = Vec::new();
 		// collect inputs
@@ -549,6 +558,30 @@ impl Atlas {
 					println!("Error writing .map to {}", &mapname);
 					return Err(e);
 				},
+			}
+			if let Some(rp) = &reference_path {
+				let atlas_stem = Path::new(&atlasname)
+					.file_stem()
+					.unwrap()
+					.to_str()
+					.unwrap()
+					.to_string();
+				println!("Writing references for {} to {}", &atlas_stem, rp.display());
+				for e in a.entries {
+					//dbg!(&e);
+					let stem = e.get_stem();
+					//println!("{} in {}", &stem, &atlas_stem);
+					let mut omtr = PathBuf::new();
+					omtr.push(&rp);
+					omtr.push(&stem);
+					omtr.set_extension(&"omtr");
+					//dbg!(&omtr);
+					let mut f = match File::create(omtr) {
+						Ok(f) => f,
+						Err(_) => anyhow::bail!("io"),
+					};
+					write!(f, "{}\n", &atlas_stem).unwrap();
+				}
 			}
 			n += 1;
 		}

@@ -17,14 +17,16 @@ struct Cli {
 enum Commands {
 	Combine {
 		#[clap(short, long, action)]
-		output: std::path::PathBuf,
+		output:         std::path::PathBuf,
 		#[clap(short, long, action)]
-		size:   u32,
+		size:           u32,
 		#[clap(short, long, action, default_value_t = 0)]
-		border: u32,
+		border:         u32,
 		#[clap(short, long, min_values = 1, required = true)]
 		//		#[clap(short, long, required = true)] // use above, since this is not good enough
 		input: Vec<std::path::PathBuf>,
+		#[clap(short = 'r', long, action)]
+		reference_path: Option<std::path::PathBuf>,
 	},
 	Info {
 		#[clap(short, long, action)]
@@ -50,12 +52,17 @@ fn main() -> anyhow::Result<()> {
 					size,
 					border,
 					input,
+					reference_path,
 				} => {
 					//println!("combine {:?} {} {} {:?}", &output, &size, &border, &input);
 					println!("combine");
 					println!("output         : {:?}", output);
 					println!("size           : {:?}", size);
 					println!("border         : {:?}", border);
+					//println!("write reference: {}", if write_reference { "YES" } else { "NO" } );
+					if let Some(rp) = &reference_path {
+						println!("reference_path : {}", rp.display());
+					}
 					//		println!("input          : {:?}", input );
 					println!("input          : [");
 					for i in &input {
@@ -63,9 +70,12 @@ fn main() -> anyhow::Result<()> {
 					}
 					println!("]");
 					match Atlas::combine(
-						&output, size, border,
+						&output,
+						size,
+						border,
 						//&input.iter().map(String::as_str).collect(),
 						&input,
+						reference_path.as_ref(),
 					) {
 						Ok(1) => {
 							println!("1 atlas created");
