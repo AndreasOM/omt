@@ -387,6 +387,12 @@ impl Atlas {
 
 			result.push(a);
 			n += 1;
+			dbg!(&input);
+			dbg!(&inname);
+			if input == inname {
+				// for non-template aka single file cases
+				break;
+			}
 		}
 		result
 	}

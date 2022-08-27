@@ -1,149 +1,117 @@
 use std::process;
 
-use clap::{App, Arg, SubCommand};
+use clap::{Parser, Subcommand};
 use omt::atlas::Atlas;
 use omt::atlas::AtlasPreviewer;
 
+#[derive(Debug, Parser)]
+#[clap(name = "omt-atlas")]
+#[clap(author, version)]
+#[clap(about = "Part of the OMT suite of game tools. Handles texture atlases.", long_about = None)]
+struct Cli {
+	#[clap(subcommand)]
+	command: Option<Commands>,
+}
+
+#[derive(Debug, Subcommand)]
+enum Commands {
+	Combine {
+		#[clap(short, long, action)]
+		output: String, // :TODO: std::path::PathBuf,
+		#[clap(short, long, action)]
+		size:   u32,
+		#[clap(short, long, action, default_value_t = 0)]
+		border: u32,
+		#[clap(short, long, min_values = 1, required = true)]
+		//		#[clap(short, long, required = true)]
+		input: Vec<String>, // :TODO: Vec<std::path::PathBuf>,
+	},
+	Info {
+		#[clap(short, long, action)]
+		input: String, // :TODO: std::path::PathBuf,
+	},
+	Preview {
+		#[clap(short, long, action)]
+		input: String, // :TODO: std::path::PathBuf,
+	},
+}
+
 fn main() -> anyhow::Result<()> {
 	// omt-atlas combine --output test-atlas-%d --size 2048 --border 0 --input ../Content/test.png
-	const VERSION: &str = env!("CARGO_PKG_VERSION");
-	let matches = App::new("omt-atlas")
-		.version(VERSION)
-		.author("Andreas N. <andreas@omni-mad.com>")
-		.about("Handles atlases")
-		.subcommand(
-			SubCommand::with_name("combine")
-				.arg(
-					Arg::with_name("output")
-						.long("output")
-						.value_name("OUTPUT")
-						.help("Set the output")
-						.takes_value(true),
-				)
-				.arg(
-					Arg::with_name("size")
-						.long("size")
-						.value_name("SIZE")
-						.help("Set the size")
-						.takes_value(true),
-				)
-				.arg(
-					Arg::with_name("border")
-						.long("border")
-						.value_name("BORDER")
-						.help("Set the border")
-						.takes_value(true),
-				)
-				.arg(
-					Arg::with_name("input")
-						.long("input")
-						.value_name("INPUT")
-						.help("Set the input")
-						.takes_value(true)
-						.multiple(true),
-				),
-		)
-		.subcommand(
-			SubCommand::with_name("info").arg(
-				Arg::with_name("input")
-					.long("input")
-					.value_name("INPUT")
-					.help("Set the input")
-					.takes_value(true),
-			),
-		)
-		.subcommand(
-			SubCommand::with_name("preview").arg(
-				Arg::with_name("input")
-					.long("input")
-					.value_name("INPUT")
-					.help("Set the input")
-					.takes_value(true),
-			),
-		)
-		.get_matches();
 
-	if let Some(("combine", sub_matches)) = matches.subcommand() {
-		let output = sub_matches
-			.value_of("output")
-			.unwrap_or("output-atlas-%d")
-			.to_string();
-		let size = sub_matches.value_of("size").unwrap_or("2048").to_string();
-		let border = sub_matches.value_of("border").unwrap_or("0").to_string();
-		let input = sub_matches.values_of("input").unwrap().collect::<Vec<_>>();
+	let cli = Cli::parse();
+	//dbg!(&cli);
+	match cli.command {
+		Some(command) => {
+			//dbg!(&command);
+			match command {
+				Commands::Combine {
+					output,
+					size,
+					border,
+					input,
+				} => {
+					//println!("combine {:?} {} {} {:?}", &output, &size, &border, &input);
+					println!("combine");
+					println!("output         : {:?}", output);
+					println!("size           : {:?}", size);
+					println!("border         : {:?}", border);
+					//		println!("input          : {:?}", input );
+					println!("input          : [");
+					for i in &input {
+						println!("\t{:?}", i);
+					}
+					println!("]");
+					match Atlas::combine(
+						&output,
+						size,
+						border,
+						&input.iter().map(String::as_str).collect(),
+					) {
+						Ok(1) => {
+							println!("1 atlas created");
+							process::exit(0);
+						},
+						Ok(n) => {
+							println!("{:?} atlases created", n);
+							process::exit(0);
+						},
+						Err(e) => {
+							println!("Error combining atlas >{:?}>", e);
+							process::exit(-1);
+						},
+					}
+				},
+				Commands::Info { input } => {
+					println!("info");
+					println!("input         : {:?}", input);
+					match Atlas::info(&input) {
+						Ok(_) => {
+							process::exit(0);
+						},
+						Err(e) => {
+							println!("Error getting info from atlas: {}", &e);
+							process::exit(-1);
+						},
+					}
+				},
+				Commands::Preview { input } => {
+					println!("preview");
+					println!("input         : {:?}", input);
+					match AtlasPreviewer::preview(&input) {
+						Ok(_) => {
+							process::exit(0);
+						},
+						Err(e) => {
+							println!("Error getting info from atlas: {}", &e);
+							process::exit(-1);
+						},
+					}
+				},
+			};
+		},
+		None => {},
+	};
 
-		let size = match u32::from_str_radix(&size, 10) {
-			Ok(n) => n,
-			x => {
-				println!("Error parsing size {:?} >{}<", x, size);
-				process::exit(-1);
-			},
-		};
-
-		let border = match u32::from_str_radix(&border, 10) {
-			Ok(n) => n,
-			x => {
-				println!("Error parsing border {:?} >{}<", x, border);
-				process::exit(-1);
-			},
-		};
-
-		println!("output         : {:?}", output);
-		println!("size           : {:?}", size);
-		println!("border         : {:?}", border);
-		//		println!("input          : {:?}", input );
-		println!("input          : [");
-		for i in &input {
-			println!("\t{:?}", i);
-		}
-		println!("]");
-
-		match Atlas::combine(&output, size, border, &input) {
-			Ok(1) => {
-				println!("1 atlas created");
-				process::exit(0);
-			},
-			Ok(n) => {
-				println!("{:?} atlases created", n);
-				process::exit(0);
-			},
-			Err(e) => {
-				println!("Error combining atlas >{:?}>", e);
-				process::exit(-1);
-			},
-		}
-	}
-	if let Some(("info", sub_matches)) = matches.subcommand() {
-		let input = sub_matches
-			.value_of("input")
-			.unwrap_or("input-atlas-%d")
-			.to_string();
-		println!("input         : {:?}", input);
-		match Atlas::info(&input) {
-			Ok(_) => {
-				process::exit(0);
-			},
-			Err(e) => {
-				println!("Error getting info from atlas: {}", &e);
-				process::exit(-1);
-			},
-		}
-	}
-	if let Some(("preview", sub_matches)) = matches.subcommand() {
-		let input = sub_matches
-			.value_of("input")
-			.unwrap_or("input-atlas-%d")
-			.to_string();
-		println!("input         : {:?}", input);
-		match AtlasPreviewer::preview(&input) {
-			Ok(_) => {
-				process::exit(0);
-			},
-			Err(e) => {
-				println!("Error getting info from atlas: {}", &e);
-				process::exit(-1);
-			},
-		}
-	}
 	Ok(())
 }
