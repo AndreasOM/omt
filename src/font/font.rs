@@ -3,7 +3,7 @@ use std::io::{BufReader, Read, Write};
 
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use image::{DynamicImage, GenericImage, GenericImageView, ImageFormat};
-use om_fork_distance_field::DistanceFieldExt;
+use distance_field::DistanceFieldExt;
 use rusttype::{point, Font as RTFont, Scale};
 
 use crate::atlas::AtlasFitter;
@@ -334,9 +334,9 @@ impl Font {
 								distancefield_max_distance as u32 * scale_factor as u32;
 
 							let distance_field = glyph_image.grayscale().distance_field(
-								om_fork_distance_field::Options {
-									size: (w, h),
-									max_distance: max_distance as u16,
+								distance_field::Options {
+									size: (w as usize, h as usize),
+									max_distance: max_distance as usize,
 									..Default::default()
 								},
 							);
