@@ -5,22 +5,32 @@ use std::string::String;
 
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 
+use crate::name_map::NameMap;
+
 #[derive(Debug, Default)]
 struct Entry {
 	//	basepath: String,
-	filename: String,
-	crc:      u32,
-	size:     u32,
-	pos:      u32,
-	data:     Vec<u8>,
+	filename:   String,
+	clean_name: Option<String>,
+	crc:        u32,
+	size:       u32,
+	pos:        u32,
+	data:       Vec<u8>,
 }
 
 impl core::fmt::Display for Entry {
 	fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> Result<(), core::fmt::Error> {
 		write!(
 			f,
-			"{} [{:#010x}] {:#10} bytes at {:#010x}",
-			self.filename, self.crc, self.size, self.pos
+			"[{:#010x}] {:#10} bytes at {:#010x} -> {}",
+			self.crc,
+			self.size,
+			self.pos,
+			if let Some(clean_name) = &self.clean_name {
+				clean_name
+			} else {
+				&self.filename
+			},
 		)
 	}
 }
@@ -63,6 +73,7 @@ impl Entry {
 		Entry {
 			//			basepath: basepath.to_string(),
 			filename: filename.to_string(),
+			clean_name: Some(clean_name),
 			crc: crc,
 			size: size,
 			..Default::default()
@@ -97,40 +108,69 @@ impl Entry {
 	}
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 struct Archive {
 	basepath: String,
 	entries:  Vec<Entry>,
+	name_map: Option<NameMap>,
 }
 
 impl Archive {
 	fn create(basepath: &String) -> Archive {
 		Archive {
 			basepath: basepath.clone(),
-			entries:  Vec::new(),
+			entries: Vec::new(),
+			..Default::default()
 		}
 	}
+
+	fn give_name_map(&mut self, name_map: Option<NameMap>) {
+		self.name_map = name_map;
+	}
+
+	fn take_name_map(&mut self) -> Option<NameMap> {
+		self.name_map.take()
+	}
+
 	fn add_entry(&mut self, filename: &String) -> bool {
 		let entry = Entry::create(&self.basepath, &filename);
+		if let Some(name_map) = &mut self.name_map {
+			if let Some(clean_name) = &entry.clean_name {
+				name_map.insert(entry.crc, clean_name.to_string());
+			}
+		}
 
 		self.entries.push(entry);
+
 		true
 	}
 
 	fn add_entry_from_archive(&mut self, crc: u32, pos: u32, size: u32) -> bool {
-		let entry = Entry::create_from_archive(crc, pos, size);
+		let mut entry = Entry::create_from_archive(crc, pos, size);
+		if let Some(name_map) = &mut self.name_map {
+			if let Some(clean_name) = &entry.clean_name {
+				name_map.insert(entry.crc, clean_name.to_string());
+			} else {
+				entry.clean_name = name_map.get_name(crc).cloned();
+				/*
+				if let Some( clean_name ) = name_map.get_name( crc ) {
+					entry.clean_name = clean_name.to_string();
+				}
+				*/
+			}
+		}
 
 		self.entries.push(entry);
 		true
 	}
 
-	fn save(&self, output: &String) -> Result<u32, &'static str> {
+	fn save(&self, output: &String) -> anyhow::Result<u32> {
 		// write output
 		let output_file = File::create(output);
 		// :TODO: rethink error handling
 		let mut output_file = match output_file {
 			Ok(p) => p,
-			Err(_e) => return Err("Error writing file"),
+			Err(_e) => anyhow::bail!("Error writing file"),
 		};
 
 		// :TODO: add error handling
@@ -173,7 +213,7 @@ impl Archive {
 			// :TODO: rethink error handling
 			let mut data_file = match data_file {
 				Ok(p) => p,
-				Err(_e) => return Err("Error reading data file"),
+				Err(_e) => anyhow::bail!("Error reading data file"),
 			};
 			let mut buffer = Vec::<u8>::new();
 			data_file.read_to_end(&mut buffer).unwrap();
@@ -287,13 +327,40 @@ impl Helper {
 pub struct Packer {}
 
 impl Packer {
-	pub fn pack(basepath: &String, paklist: &String, output: &String) -> Result<u32, &'static str> {
+	pub fn pack(
+		basepath: &String,
+		paklist: &String,
+		output: &String,
+		name_map_file: Option<&str>,
+	) -> anyhow::Result<u32> {
+		let name_map = if let Some(name_map_file) = &name_map_file {
+			let nm = NameMap::load_or_create(&name_map_file)?;
+			println!("Loaded NameMap:\n{}", nm);
+			Some(nm)
+		} else {
+			None
+		};
+
 		let mut archive = Archive::create(basepath);
+		archive.give_name_map(name_map);
 
 		for filename in Helper::filenames_in_file(paklist).unwrap_or(Vec::new()) {
 			// :TODO: add better error handling
 			println!("{:?}", filename);
 			archive.add_entry(&filename);
+		}
+
+		// only save (updated) name map on success
+		if let Some(mut name_map) = archive.take_name_map() {
+			println!("{}", name_map);
+			if name_map.dirty() {
+				if let Some(name_map_file) = &name_map_file {
+					name_map.save(name_map_file)?;
+					name_map.clear_dirty();
+				}
+			} else {
+				println!("No names changed or added. Not saving.");
+			}
 		}
 
 		archive.save(output)
@@ -319,6 +386,7 @@ impl Packer {
 		}
 
 		let mut archive = Archive::create(&String::new());
+
 		match archive.load(input) {
 			Err(e) => {
 				println!("Error in load");
@@ -331,25 +399,36 @@ impl Packer {
 		Ok(0)
 	}
 
-	pub fn list(input: &String) -> Result<u32, &'static str> {
+	pub fn list(input: &String, name_map_file: Option<&str>) -> anyhow::Result<u32> {
+		let name_map = if let Some(name_map_file) = &name_map_file {
+			let nm = NameMap::load_or_create(&name_map_file)?;
+			println!("Loaded NameMap:\n{}", nm);
+			Some(nm)
+		} else {
+			None
+		};
+
 		let metadata = match fs::metadata(input) {
-			Err(_err) => return Err("Input not found"),
+			Err(_err) => anyhow::bail!("Input not found"),
 			Ok(md) => md,
 		};
 
 		if !metadata.is_file() {
-			return Err("Input is not a file");
+			anyhow::bail!("Input is not a file");
 		}
 
 		let mut archive = Archive::create(&String::new());
+		archive.give_name_map(name_map);
+
 		match archive.load(input) {
 			Err(e) => {
-				println!("Error in load");
-				return Err(e);
+				anyhow::bail!("Error in load");
 			},
 			Ok(_) => {},
 		};
 		//archive.unpack(targetpath).unwrap();
+
+		let name_map = archive.take_name_map();
 
 		for e in archive.entries() {
 			println!("{}", e);

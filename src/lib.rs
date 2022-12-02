@@ -8,3 +8,5 @@ pub mod shader;
 pub mod soundbank;
 pub mod util;
 pub mod xcassets;
+
+pub mod name_map;

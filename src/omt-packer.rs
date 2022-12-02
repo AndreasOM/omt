@@ -31,6 +31,13 @@ fn main() {
 						.value_name("PAKLIST")
 						.help("Set the pakelist name")
 						.takes_value(true),
+				)
+				.arg(
+					Arg::with_name("name-map")
+						.long("name-map")
+						.value_name("NAME_MAP")
+						.help("Set the (optional) name map file")
+						.takes_value(true),
 				),
 		)
 		.subcommand(
@@ -51,13 +58,21 @@ fn main() {
 				),
 		)
 		.subcommand(
-			SubCommand::with_name("list").arg(
-				Arg::with_name("input")
-					.long("input")
-					.value_name("INPUT")
-					.help("Set the input filename")
-					.takes_value(true),
-			),
+			SubCommand::with_name("list")
+				.arg(
+					Arg::with_name("input")
+						.long("input")
+						.value_name("INPUT")
+						.help("Set the input filename")
+						.takes_value(true),
+				)
+				.arg(
+					Arg::with_name("name-map")
+						.long("name-map")
+						.value_name("NAME_MAP")
+						.help("Set the (optional) name map file")
+						.takes_value(true),
+				),
 		)
 		.get_matches();
 
@@ -72,12 +87,14 @@ fn main() {
 				.unwrap_or("out.omar")
 				.to_string();
 			let paklist = sub_matches.value_of("paklist").unwrap_or("").to_string();
+			let name_map = sub_matches.value_of("name-map");
 
-			println!("basepath: {:?}", basepath);
-			println!("output  : {:?}", output);
-			println!("paklist : {:?}", paklist);
+			println!("basepath : {:?}", basepath);
+			println!("output   : {:?}", output);
+			println!("paklist  : {:?}", paklist);
+			println!("name-map : {:?}", name_map);
 
-			match Packer::pack(&basepath, &paklist, &output) {
+			match Packer::pack(&basepath, &paklist, &output, name_map) {
 				Ok(number_of_files) => {
 					println!("{:?} files added to archive", number_of_files);
 					process::exit(0);
@@ -116,9 +133,11 @@ fn main() {
 				.value_of("input")
 				.unwrap_or("in.omar")
 				.to_string();
+			let name_map = sub_matches.value_of("name-map");
 
-			println!("input  : {:?}", input);
-			match Packer::list(&input) {
+			println!("input    : {:?}", input);
+			println!("name-map : {:?}", name_map);
+			match Packer::list(&input, name_map) {
 				Ok(number_of_files) => {
 					println!("{:?} files found in archive", number_of_files);
 					process::exit(0);
