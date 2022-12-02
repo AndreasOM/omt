@@ -261,14 +261,6 @@ impl Archive {
 	}
 }
 
-impl Iterator for Archive {
-	type Item = Entry;
-
-	fn next(&mut self) -> std::option::Option<<Self as Iterator>::Item> {
-		todo!()
-	}
-}
-
 struct Helper {}
 
 impl Helper {
