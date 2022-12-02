@@ -15,6 +15,15 @@ struct Entry {
 	data:     Vec<u8>,
 }
 
+impl core::fmt::Display for Entry {
+	fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> Result<(), core::fmt::Error> {
+		write!(
+			f,
+			"{} [{:#010x}] {:#10} bytes at {:#010x}",
+			self.filename, self.crc, self.size, self.pos
+		)
+	}
+}
 impl Entry {
 	fn create(basepath: &String, filename: &String) -> Entry {
 		let fullfilename = format!("{}/{}", basepath, filename);
@@ -246,6 +255,18 @@ impl Archive {
 		}
 		Ok(0)
 	}
+
+	pub fn entries(&self) -> std::slice::Iter<'_, Entry> {
+		self.entries.iter()
+	}
+}
+
+impl Iterator for Archive {
+	type Item = Entry;
+
+	fn next(&mut self) -> std::option::Option<<Self as Iterator>::Item> {
+		todo!()
+	}
 }
 
 struct Helper {}
@@ -316,5 +337,31 @@ impl Packer {
 		archive.unpack(targetpath).unwrap();
 
 		Ok(0)
+	}
+
+	pub fn list(input: &String) -> Result<u32, &'static str> {
+		let metadata = match fs::metadata(input) {
+			Err(_err) => return Err("Input not found"),
+			Ok(md) => md,
+		};
+
+		if !metadata.is_file() {
+			return Err("Input is not a file");
+		}
+
+		let mut archive = Archive::create(&String::new());
+		match archive.load(input) {
+			Err(e) => {
+				println!("Error in load");
+				return Err(e);
+			},
+			Ok(_) => {},
+		};
+		//archive.unpack(targetpath).unwrap();
+
+		for e in archive.entries() {
+			println!("{}", e);
+		}
+		Ok(archive.entries().len() as u32)
 	}
 }

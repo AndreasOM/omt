@@ -16,3 +16,6 @@ fmt:
 test-noisy:
 	cargo test -- --nocapture
 
+release-alpha:
+	omr-bumper -b patch -r alpha
+
