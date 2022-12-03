@@ -62,6 +62,12 @@ fn main() {
 						.value_name("NAME_MAP")
 						.help("Set the (optional) name map file")
 						.takes_value(true),
+				)
+				.arg(
+					Arg::with_name("names-only")
+						.long("names-only")
+						.help("Use names for file instead of symlinking")
+						.action(clap::ArgAction::SetTrue),
 				),
 		)
 		.subcommand(
@@ -122,11 +128,14 @@ fn main() {
 				.unwrap_or("in.omar")
 				.to_string();
 			let name_map = sub_matches.value_of("name-map");
+			let names_only = sub_matches.get_flag("names-only");
 
 			println!("targetpath: {:?}", targetpath);
 			println!("input     : {:?}", input);
 			println!("name-map  : {:?}", name_map);
-			match Packer::unpack(&input, &targetpath, name_map) {
+			println!("names-only: {:?}", names_only);
+
+			match Packer::unpack(&input, &targetpath, name_map, names_only) {
 				Ok(number_of_files) => {
 					println!("{:?} files extracted to archive", number_of_files);
 					process::exit(0);

@@ -4,6 +4,7 @@ use std::io::{BufRead, BufReader, Read, Write};
 use std::string::String;
 
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
+use symlink::symlink_file;
 
 use crate::name_map::NameMap;
 
@@ -110,9 +111,10 @@ impl Entry {
 
 #[derive(Debug, Default)]
 struct Archive {
-	basepath: String,
-	entries:  Vec<Entry>,
-	name_map: Option<NameMap>,
+	basepath:   String,
+	entries:    Vec<Entry>,
+	name_map:   Option<NameMap>,
+	names_only: bool,
 }
 
 impl Archive {
@@ -130,6 +132,10 @@ impl Archive {
 
 	fn take_name_map(&mut self) -> Option<NameMap> {
 		self.name_map.take()
+	}
+
+	fn set_names_only(&mut self, names_only: bool) {
+		self.names_only = names_only;
 	}
 
 	fn add_entry(&mut self, filename: &String) -> bool {
@@ -282,9 +288,25 @@ impl Archive {
 	fn unpack(&self, targetpath: &String) -> Result<u32, &'static str> {
 		for entry in &self.entries {
 			let filename = format!("{}/{:#010X}", targetpath, entry.crc);
-			println!("{:?}", filename);
+			let clean_name = if let Some(name_map) = &self.name_map {
+				name_map.get_name(entry.crc)
+			} else {
+				None
+			};
+			println!("{} <- {}", filename, clean_name.unwrap_or(&"".to_string()));
 
-			let output_file = File::create(filename);
+			let filename = if !self.names_only {
+				filename
+			} else {
+				if let Some(clean_name) = clean_name {
+					format!("{}/{}", targetpath, clean_name)
+				} else {
+					println!("Name for {} not found, using crc name.", filename);
+					filename
+				}
+			};
+
+			let output_file = File::create(&filename);
 			// :TODO: rethink error handling
 			let mut output_file = match output_file {
 				Ok(p) => p,
@@ -292,6 +314,21 @@ impl Archive {
 			};
 
 			output_file.write_all(&entry.data).unwrap();
+
+			if !self.names_only {
+				if let Some(clean_name) = &clean_name {
+					let clean_name = format!("{}/{}", targetpath, clean_name);
+					let filename = format!("{:#010X}", entry.crc);
+					println!("Linking {} <- {}", filename, clean_name);
+					match symlink_file(filename, clean_name) {
+						Ok(()) => {},
+						Err(_e) => {},
+					}
+				// println!("Linking {:#010x} <- {}", entry.crc, clean_name);
+				} else {
+					// println!("Not linking {:#010x}, no name found in map.", entry.crc);
+				}
+			}
 		}
 		Ok(0)
 	}
@@ -370,6 +407,7 @@ impl Packer {
 		input: &String,
 		targetpath: &String,
 		name_map_file: Option<&str>,
+		names_only: bool,
 	) -> anyhow::Result<u32> {
 		let name_map = if let Some(name_map_file) = &name_map_file {
 			let nm = NameMap::load_or_create(&name_map_file)?;
@@ -399,6 +437,7 @@ impl Packer {
 
 		let mut archive = Archive::create(&String::new());
 		archive.give_name_map(name_map);
+		archive.set_names_only(names_only);
 
 		match archive.load(input) {
 			Err(e) => {
