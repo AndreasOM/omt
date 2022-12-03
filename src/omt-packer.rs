@@ -55,6 +55,13 @@ fn main() {
 						.value_name("INPUT")
 						.help("Set the input filename")
 						.takes_value(true),
+				)
+				.arg(
+					Arg::with_name("name-map")
+						.long("name-map")
+						.value_name("NAME_MAP")
+						.help("Set the (optional) name map file")
+						.takes_value(true),
 				),
 		)
 		.subcommand(
@@ -114,10 +121,12 @@ fn main() {
 				.value_of("input")
 				.unwrap_or("in.omar")
 				.to_string();
+			let name_map = sub_matches.value_of("name-map");
 
 			println!("targetpath: {:?}", targetpath);
-			println!("input  : {:?}", input);
-			match Packer::unpack(&input, &targetpath) {
+			println!("input     : {:?}", input);
+			println!("name-map  : {:?}", name_map);
+			match Packer::unpack(&input, &targetpath, name_map) {
 				Ok(number_of_files) => {
 					println!("{:?} files extracted to archive", number_of_files);
 					process::exit(0);
