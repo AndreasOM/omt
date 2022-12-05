@@ -46,7 +46,6 @@ impl CommandPacker for CommandPackerList {
 				},
 				Ok(_) => {},
 			};
-			//archive.unpack(targetpath).unwrap();
 
 			let _name_map = archive.take_name_map();
 

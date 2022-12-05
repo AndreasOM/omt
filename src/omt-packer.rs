@@ -5,7 +5,6 @@ use omt::packer::command_packer::CommandPacker;
 use omt::packer::command_packer_list::CommandPackerList;
 use omt::packer::command_packer_pack::CommandPackerPack;
 use omt::packer::command_packer_unpack::CommandPackerUnpack;
-use omt::packer::Packer;
 
 fn main() {
 	const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -104,33 +103,6 @@ fn main() {
 
 	let r = match matches.subcommand() {
 		Some(("pack", sub_matches)) => {
-			/*
-			let basepath = sub_matches.value_of("basepath").unwrap_or(".").to_string();
-			let output = sub_matches
-				.value_of("output")
-				.unwrap_or("out.omar")
-				.to_string();
-			let paklist = sub_matches.value_of("paklist").unwrap_or("").to_string();
-			let name_map = sub_matches.value_of("name-map");
-
-			println!("basepath : {:?}", basepath);
-			println!("output   : {:?}", output);
-			println!("paklist  : {:?}", paklist);
-			println!("name-map : {:?}", name_map);
-
-			match Packer::pack(&basepath, &paklist, &output, name_map) {
-				Ok(number_of_files) => {
-					println!("{:?} files added to archive", number_of_files);
-					process::exit(0);
-				},
-				Err(e) => {
-					println!("Error {:?}", e);
-					process::exit(-1);
-				},
-			};
-
-			None
-			*/
 			Some((
 				Box::new(CommandPackerPack::new()) as Box<dyn CommandPacker>,
 				sub_matches, /*, &|n| {
@@ -158,7 +130,10 @@ fn main() {
 			println!("SubCommand {} is not supported", o);
 			None
 		},
-		None => todo!(),
+		None => {
+			println!("No SubCommand given. Try help.");
+			None
+		},
 	};
 
 	if let Some((mut command, sub_matches /*, ok_func*/)) = r {

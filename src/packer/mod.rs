@@ -1,5 +1,4 @@
 mod packer;
-pub use packer::Packer;
 
 pub mod command_packer;
 pub mod command_packer_list;
