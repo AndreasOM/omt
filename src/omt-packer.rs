@@ -1,6 +1,10 @@
 use std::process;
 
 use clap::{App, Arg, SubCommand};
+use omt::packer::command_packer::CommandPacker;
+use omt::packer::command_packer_list::CommandPackerList;
+use omt::packer::command_packer_pack::CommandPackerPack;
+use omt::packer::command_packer_unpack::CommandPackerUnpack;
 use omt::packer::Packer;
 
 fn main() {
@@ -15,6 +19,7 @@ fn main() {
 					Arg::with_name("basepath")
 						.long("basepath")
 						.value_name("BASEPATH")
+						.required(true)
 						.help("Set the base path (for relative names)")
 						.takes_value(true),
 				)
@@ -22,6 +27,7 @@ fn main() {
 					Arg::with_name("output")
 						.long("output")
 						.value_name("OUTPUT")
+						.required(true)
 						.help("Set the output filename")
 						.takes_value(true),
 				)
@@ -29,6 +35,7 @@ fn main() {
 					Arg::with_name("paklist")
 						.long("paklist")
 						.value_name("PAKLIST")
+						.required(true)
 						.help("Set the pakelist name")
 						.takes_value(true),
 				)
@@ -46,6 +53,7 @@ fn main() {
 					Arg::with_name("targetpath")
 						.long("targetpath")
 						.value_name("TARGETPATH")
+						.required(true)
 						.help("Set the target path (for relative names)")
 						.takes_value(true),
 				)
@@ -53,6 +61,7 @@ fn main() {
 					Arg::with_name("input")
 						.long("input")
 						.value_name("INPUT")
+						.required(true)
 						.help("Set the input filename")
 						.takes_value(true),
 				)
@@ -76,6 +85,7 @@ fn main() {
 					Arg::with_name("input")
 						.long("input")
 						.value_name("INPUT")
+						.required(true)
 						.help("Set the input filename")
 						.takes_value(true),
 				)
@@ -92,8 +102,9 @@ fn main() {
 	//	println!("{:?}", matches);
 	//	println!("{:?}", matches.subcommand());
 
-	match matches.subcommand() {
+	let r = match matches.subcommand() {
 		Some(("pack", sub_matches)) => {
+			/*
 			let basepath = sub_matches.value_of("basepath").unwrap_or(".").to_string();
 			let output = sub_matches
 				.value_of("output")
@@ -116,59 +127,74 @@ fn main() {
 					println!("Error {:?}", e);
 					process::exit(-1);
 				},
-			}
+			};
+
+			None
+			*/
+			Some((
+				Box::new(CommandPackerPack::new()) as Box<dyn CommandPacker>,
+				sub_matches, /*, &|n| {
+								 println!("{} files added to archive", n);
+							 }*/
+			))
 		},
 		Some(("unpack", sub_matches)) => {
-			let targetpath = sub_matches
-				.value_of("targetpath")
-				.unwrap_or(".")
-				.to_string();
-			let input = sub_matches
-				.value_of("input")
-				.unwrap_or("in.omar")
-				.to_string();
-			let name_map = sub_matches.value_of("name-map");
-			let names_only = sub_matches.get_flag("names-only");
-
-			println!("targetpath: {:?}", targetpath);
-			println!("input     : {:?}", input);
-			println!("name-map  : {:?}", name_map);
-			println!("names-only: {:?}", names_only);
-
-			match Packer::unpack(&input, &targetpath, name_map, names_only) {
-				Ok(number_of_files) => {
-					println!("{:?} files extracted to archive", number_of_files);
-					process::exit(0);
-				},
-				Err(e) => {
-					println!("Error {:?}", e);
-					process::exit(-1);
-				},
-			}
+			Some((
+				Box::new(CommandPackerUnpack::new()) as Box<dyn CommandPacker>,
+				sub_matches, /*, &|n| {
+								 println!("{} files extracted from archive", n);
+							 }*/
+			))
 		},
 		Some(("list", sub_matches)) => {
-			let input = sub_matches
-				.value_of("input")
-				.unwrap_or("in.omar")
-				.to_string();
-			let name_map = sub_matches.value_of("name-map");
-
-			println!("input    : {:?}", input);
-			println!("name-map : {:?}", name_map);
-			match Packer::list(&input, name_map) {
-				Ok(number_of_files) => {
-					println!("{:?} files found in archive", number_of_files);
-					process::exit(0);
-				},
-				Err(e) => {
-					println!("Error {:?}", e);
-					process::exit(-1);
-				},
-			}
+			Some((
+				Box::new(CommandPackerList::new()) as Box<dyn CommandPacker>,
+				sub_matches, /*&|n| {
+								 println!("{} files found in archive", n);
+							 }*/
+			))
 		},
 		Some((o, _sub_matches)) => {
 			println!("SubCommand {} is not supported", o);
+			None
 		},
 		None => todo!(),
 	};
+
+	if let Some((mut command, sub_matches /*, ok_func*/)) = r {
+		if let Some(input) = sub_matches.try_get_one::<String>("input").ok().flatten() {
+			command.set_input(&input);
+		}
+		if let Some(name_map) = sub_matches.try_get_one::<String>("name-map").ok().flatten() {
+			command.set_name_map(&name_map);
+		}
+		if let Some(basepath) = sub_matches.try_get_one::<String>("basepath").ok().flatten() {
+			command.set_basepath(&basepath);
+		}
+		if let Some(paklist) = sub_matches.try_get_one::<String>("paklist").ok().flatten() {
+			command.set_paklist(&paklist);
+		}
+		if let Some(targetpath) = sub_matches
+			.try_get_one::<String>("targetpath")
+			.ok()
+			.flatten()
+		{
+			command.set_targetpath(&targetpath);
+		}
+
+		if let Some(names_only) = sub_matches.try_get_one::<bool>("names-only").ok().flatten() {
+			command.set_names_only(*names_only);
+		}
+
+		match command.run() {
+			Ok(_n) => {
+				//ok_func(n);
+				process::exit(0);
+			},
+			Err(e) => {
+				println!("Error {:?}", e);
+				process::exit(-1);
+			},
+		}
+	}
 }

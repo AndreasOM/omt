@@ -9,7 +9,7 @@ use symlink::symlink_file;
 use crate::name_map::NameMap;
 
 #[derive(Debug, Default)]
-struct Entry {
+pub struct Entry {
 	//	basepath: String,
 	filename:   String,
 	clean_name: Option<String>,
@@ -110,7 +110,7 @@ impl Entry {
 }
 
 #[derive(Debug, Default)]
-struct Archive {
+pub struct Archive {
 	basepath:   String,
 	entries:    Vec<Entry>,
 	name_map:   Option<NameMap>,
@@ -118,7 +118,7 @@ struct Archive {
 }
 
 impl Archive {
-	fn create(basepath: &String) -> Archive {
+	pub fn create(basepath: &String) -> Archive {
 		Archive {
 			basepath: basepath.clone(),
 			entries: Vec::new(),
@@ -126,19 +126,19 @@ impl Archive {
 		}
 	}
 
-	fn give_name_map(&mut self, name_map: Option<NameMap>) {
+	pub fn give_name_map(&mut self, name_map: Option<NameMap>) {
 		self.name_map = name_map;
 	}
 
-	fn take_name_map(&mut self) -> Option<NameMap> {
+	pub fn take_name_map(&mut self) -> Option<NameMap> {
 		self.name_map.take()
 	}
 
-	fn set_names_only(&mut self, names_only: bool) {
+	pub fn set_names_only(&mut self, names_only: bool) {
 		self.names_only = names_only;
 	}
 
-	fn add_entry(&mut self, filename: &String) -> bool {
+	pub fn add_entry(&mut self, filename: &String) -> bool {
 		let entry = Entry::create(&self.basepath, &filename);
 		if let Some(name_map) = &mut self.name_map {
 			if let Some(clean_name) = &entry.clean_name {
@@ -170,7 +170,7 @@ impl Archive {
 		true
 	}
 
-	fn save(&self, output: &String) -> anyhow::Result<u32> {
+	pub fn save(&self, output: &String) -> anyhow::Result<u32> {
 		// write output
 		let output_file = File::create(output);
 		// :TODO: rethink error handling
@@ -229,7 +229,7 @@ impl Archive {
 		Ok(number_of_files)
 	}
 
-	fn load(&mut self, filename: &String) -> Result<u32, &'static str> {
+	pub fn load(&mut self, filename: &String) -> Result<u32, &'static str> {
 		let file = File::open(filename);
 
 		let file = match file {
@@ -285,7 +285,7 @@ impl Archive {
 		Ok(0)
 	}
 
-	fn unpack(&self, targetpath: &String) -> Result<u32, &'static str> {
+	pub fn unpack(&self, targetpath: &String) -> Result<u32, &'static str> {
 		for entry in &self.entries {
 			let filename = format!("{}/{:#010X}", targetpath, entry.crc);
 			let clean_name = if let Some(name_map) = &self.name_map {
@@ -338,10 +338,10 @@ impl Archive {
 	}
 }
 
-struct Helper {}
+pub struct Helper {}
 
 impl Helper {
-	fn filenames_in_file(filename: &String) -> Result<Vec<String>, &'static str> {
+	pub fn filenames_in_file(filename: &String) -> Result<Vec<String>, &'static str> {
 		let file = File::open(filename);
 
 		let file = match file {
@@ -401,91 +401,5 @@ impl Packer {
 		}
 
 		archive.save(output)
-	}
-
-	pub fn unpack(
-		input: &String,
-		targetpath: &String,
-		name_map_file: Option<&str>,
-		names_only: bool,
-	) -> anyhow::Result<u32> {
-		let name_map = if let Some(name_map_file) = &name_map_file {
-			let nm = NameMap::load_or_create(&name_map_file)?;
-			println!("Loaded NameMap:\n{}", nm);
-			Some(nm)
-		} else {
-			None
-		};
-
-		let metadata = match fs::metadata(targetpath) {
-			Err(_err) => anyhow::bail!("Targetpath not found"), // :TODO: implement
-			Ok(md) => md,
-		};
-
-		if !metadata.is_dir() {
-			anyhow::bail!("Targetpath is not a directory");
-		}
-
-		let metadata = match fs::metadata(input) {
-			Err(_err) => anyhow::bail!("Input not found"),
-			Ok(md) => md,
-		};
-
-		if !metadata.is_file() {
-			anyhow::bail!("Input is not a file");
-		}
-
-		let mut archive = Archive::create(&String::new());
-		archive.give_name_map(name_map);
-		archive.set_names_only(names_only);
-
-		match archive.load(input) {
-			Err(e) => {
-				println!("Error in load");
-				anyhow::bail!(e);
-			},
-			Ok(_) => {},
-		};
-		archive.unpack(targetpath).unwrap();
-		archive.take_name_map();
-
-		Ok(0)
-	}
-
-	pub fn list(input: &String, name_map_file: Option<&str>) -> anyhow::Result<u32> {
-		let name_map = if let Some(name_map_file) = &name_map_file {
-			let nm = NameMap::load_or_create(&name_map_file)?;
-			println!("Loaded NameMap:\n{}", nm);
-			Some(nm)
-		} else {
-			None
-		};
-
-		let metadata = match fs::metadata(input) {
-			Err(_err) => anyhow::bail!("Input not found"),
-			Ok(md) => md,
-		};
-
-		if !metadata.is_file() {
-			anyhow::bail!("Input is not a file");
-		}
-
-		let mut archive = Archive::create(&String::new());
-		archive.give_name_map(name_map);
-
-		match archive.load(input) {
-			Err(e) => {
-				anyhow::bail!("Error in load");
-			},
-			Ok(_) => {},
-		};
-		//archive.unpack(targetpath).unwrap();
-
-		let name_map = archive.take_name_map();
-
-		for e in archive.entries() {
-			println!("{}", e);
-		}
-		Ok(archive.entries().len() as u32)
 	}
 }
