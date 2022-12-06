@@ -140,6 +140,9 @@ fn main() {
 		if let Some(input) = sub_matches.try_get_one::<String>("input").ok().flatten() {
 			command.set_input(&input);
 		}
+		if let Some(output) = sub_matches.try_get_one::<String>("output").ok().flatten() {
+			command.set_output(&output);
+		}
 		if let Some(name_map) = sub_matches.try_get_one::<String>("name-map").ok().flatten() {
 			command.set_name_map(&name_map);
 		}

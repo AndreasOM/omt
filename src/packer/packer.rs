@@ -118,9 +118,9 @@ pub struct Archive {
 }
 
 impl Archive {
-	pub fn create(basepath: &String) -> Archive {
+	pub fn create(basepath: &str) -> Archive {
 		Archive {
-			basepath: basepath.clone(),
+			basepath: basepath.to_string(),
 			entries: Vec::new(),
 			..Default::default()
 		}
@@ -215,11 +215,11 @@ impl Archive {
 		for entry in &self.entries {
 			let filename = format!("{}/{}", self.basepath, entry.filename);
 			//		println!("{:?}", filename );
-			let data_file = File::open(filename);
+			let data_file = File::open(&filename);
 			// :TODO: rethink error handling
 			let mut data_file = match data_file {
 				Ok(p) => p,
-				Err(_e) => anyhow::bail!("Error reading data file"),
+				Err(_e) => anyhow::bail!("Error reading data file: {}", &filename),
 			};
 			let mut buffer = Vec::<u8>::new();
 			data_file.read_to_end(&mut buffer).unwrap();

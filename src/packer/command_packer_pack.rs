@@ -29,7 +29,11 @@ impl CommandPacker for CommandPackerPack {
 		} else {
 			None
 		};
-		let mut archive = Archive::create(&String::new());
+		let basepath = match &self.basepath {
+			Some(basepath) => &basepath,
+			None => "",
+		};
+		let mut archive = Archive::create(basepath);
 		archive.give_name_map(name_map);
 
 		if let Some(paklist) = &self.paklist {
@@ -56,6 +60,8 @@ impl CommandPacker for CommandPackerPack {
 		let _name_map = archive.take_name_map();
 		if let Some(output) = &self.output {
 			return archive.save(&output);
+		} else {
+			println!("Warning: No output given. Not saving archive!");
 		}
 		Ok(0)
 	}
