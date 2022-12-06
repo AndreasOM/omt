@@ -838,7 +838,7 @@ dependencies = [
 
 [[package]]
 name = "omt"
-version = "0.7.3-alpha"
+version = "0.7.4-dev"
 dependencies = [
  "anyhow",
  "byteorder",
