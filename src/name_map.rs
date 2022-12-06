@@ -37,17 +37,7 @@ pub struct NameMap {
 const NAME_LEN: usize = 250;
 
 impl NameMap {
-	pub fn load_or_create(filename: &str) -> anyhow::Result<Self> {
-		// :TODO:
-		let mut nm: NameMap = Default::default();
-
-		let file = File::open(filename);
-
-		let file = match file {
-			Ok(p) => p,
-			Err(_e) => anyhow::bail!("Error reading file"),
-		};
-
+	fn add_from_file(&mut self, file: &mut File) -> anyhow::Result<u32> {
 		let mut bufreader = BufReader::new(file);
 
 		// read header
@@ -86,8 +76,25 @@ impl NameMap {
 			buf.resize(len, 0);
 			bufreader.read_exact(&mut buf)?;
 			let name = core::str::from_utf8(&buf)?;
-			nm.insert(crc, name.to_string());
+			self.insert(crc, name.to_string());
 		}
+		Ok(number_of_names)
+	}
+	pub fn load_or_create(filename: &str) -> anyhow::Result<Self> {
+		// :TODO:
+		let mut nm: NameMap = Default::default();
+
+		let file = File::open(filename);
+
+		match file {
+			Ok(mut file) => {
+				nm.add_from_file(&mut file)?;
+			},
+			Err(_e) => {
+				println!("Couldn't open {}. Creating new one.", &filename);
+				// anyhow::bail!("Error reading NameMap file {}", &filename)
+			},
+		};
 
 		nm.clear_dirty();
 
