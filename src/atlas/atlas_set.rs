@@ -50,7 +50,7 @@ impl AtlasSet {
 
 		// something that takes a list of entries, and return a list of pages with those entries
 
-		let mut atlas_fitter = AtlasFitter::new();
+		let mut atlas_fitter = AtlasFitter::default().with_border(self.border);
 
 		for (idx, e) in entries.iter().enumerate() {
 			atlas_fitter.add_entry(idx, e.width, e.height);
@@ -61,7 +61,7 @@ impl AtlasSet {
 		let size = self
 			.target_size
 			.expect("Pass size or use autofit() with maximum_size"); // :TODO: auto fit
-		let pages = atlas_fitter.fit(size, self.border);
+		let pages = atlas_fitter.fit(size);
 		//		println!("pages {:#?}", pages);
 
 		// create atlases

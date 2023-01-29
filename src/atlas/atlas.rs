@@ -365,7 +365,7 @@ impl Atlas {
 
 		// something that takes a list of entries, and return a list of pages with those entries
 
-		let mut atlas_fitter = AtlasFitter::new();
+		let mut atlas_fitter = AtlasFitter::default().with_border(border);
 
 		for (idx, e) in entries.iter().enumerate() {
 			atlas_fitter.add_entry(idx, e.width, e.height);
@@ -373,7 +373,7 @@ impl Atlas {
 
 		//		println!("atlas_fitter {:#?}", atlas_fitter);
 
-		let pages = atlas_fitter.fit(size, border);
+		let pages = atlas_fitter.fit(size);
 		//		println!("pages {:#?}", pages);
 
 		// create atlases

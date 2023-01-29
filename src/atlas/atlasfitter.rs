@@ -80,19 +80,22 @@ impl Row {
 #[derive(Debug, Default)]
 pub struct Page {
 	size:        u32,
-	//	border:      u32,
+	border:      u32,
 	pub entries: Vec<EntryWithPosition>,
 	rows:        Vec<Row>,
 	used_height: u32,
 }
 
 impl Page {
-	pub fn new(size: u32, _border: u32) -> Page {
+	pub fn new(size: u32) -> Page {
 		Page {
 			size: size,
-			//			border:      border,
 			..Default::default()
 		}
+	}
+	pub fn with_border(mut self, border: u32) -> Self {
+		self.border = border;
+		self
 	}
 	fn add_row(&mut self, height: u32) -> Option<usize> {
 		if height <= (self.size - self.used_height) {
@@ -108,17 +111,20 @@ impl Page {
 		}
 	}
 	fn fit_entry_to_row_with_index(&mut self, entry: &Entry, row_index: usize) -> bool {
+		let h = entry.height + 2 * self.border;
+		let w = entry.width + 2 * self.border;
+
 		match self.rows.get_mut(row_index) {
 			None => false, // give up, should never happen
 			Some(row) => {
 				//				println!("Got row {:?}", row );
-				if row.would_fit(entry.width, entry.height) {
+				if row.would_fit(w, h) {
 					// add it
 					let mut e = EntryWithPosition::new_from_entry(entry);
 					// blitting
-					let x = row.end_x;
-					let y = row.y;
-					row.end_x += e.width;
+					let x = row.end_x + self.border;
+					let y = row.y + self.border;
+					row.end_x += w;
 					e.set_position(x, y);
 					self.entries.push(e);
 					true
@@ -130,9 +136,10 @@ impl Page {
 		}
 	}
 	fn fit_entry(&mut self, entry: &Entry) -> bool {
-		let h = entry.height;
+		let h = entry.height + 2 * self.border;
+		let w = entry.width + 2 * self.border;
 
-		if self.size < entry.width || self.size < entry.height {
+		if self.size < w || self.size < h {
 			false
 		} else {
 			// find row
@@ -140,9 +147,9 @@ impl Page {
 
 			for ri in 0..self.rows.len() {
 				let r = &self.rows[ri];
-				if r.would_fit(entry.width, entry.height) {
+				if r.would_fit(w, h) {
 					//					println!("Row {:?} would fit {:?}", r, entry );
-					if r.height < 2 * entry.height {
+					if r.height < 2 * h {
 						// do not waste too much space, "2" is purely guessed
 						candidates.push(ri);
 					}
@@ -171,23 +178,23 @@ impl Page {
 	}
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct AtlasFitter {
 	entries: Vec<Entry>,
+	border:  u32,
 }
 
 impl AtlasFitter {
-	pub fn new() -> AtlasFitter {
-		AtlasFitter {
-			entries: Vec::new(),
-		}
+	pub fn with_border(mut self, border: u32) -> Self {
+		self.border = border;
+		self
 	}
 	pub fn add_entry(&mut self, id: usize, width: u32, height: u32) {
 		let e = Entry::new(id, width, height);
 		self.entries.push(e);
 	}
 
-	pub fn fit(&self, size: u32, border: u32) -> Vec<Page> {
+	pub fn fit(&self, size: u32) -> Vec<Page> {
 		let mut pages: Vec<Page> = Vec::new();
 
 		for e in &self.entries {
@@ -199,7 +206,7 @@ impl AtlasFitter {
 				}
 			}
 			if !did_fit {
-				let mut p = Page::new(size, border);
+				let mut p = Page::new(size).with_border(self.border);
 				if !p.fit_entry(&e) {
 					println!(
 						"‼️ Image doesn't fit into empty page of size {} -> {:?}",

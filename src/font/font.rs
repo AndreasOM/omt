@@ -235,13 +235,13 @@ impl Font {
 	}
 
 	fn fit_glyphs(&mut self) -> bool {
-		let mut atlas_fitter = AtlasFitter::new();
+		let mut atlas_fitter = AtlasFitter::default().with_border(self.border);
 
 		for (idx, e) in self.glyphs.iter().enumerate() {
 			atlas_fitter.add_entry(idx, e.width, e.height);
 		}
 
-		let pages = atlas_fitter.fit(self.texsize, self.border);
+		let pages = atlas_fitter.fit(self.texsize);
 
 		if pages.len() > 1 {
 			println!("Need {} pages to fit glyphs", pages.len());

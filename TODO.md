@@ -12,7 +12,6 @@
 
 # TODO
 
-- [ ] omt-atlas: Actually add border as requested
 - [ ] omt-atlas: Add multi atlas support to viewer
 
 [ ] Use crchelper functions in packer
@@ -62,6 +61,7 @@
 
 - [x] omt-atlas: Add AtlasSet to handle multiple Atlases
 - [x] omt-atlas: Automagically detect size for atlas when combining
+- [x] omt-atlas: Actually add border as requested
 
 
 ## 2022

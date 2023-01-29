@@ -2,7 +2,6 @@ use std::path::Path;
 
 use image::DynamicImage;
 use image::GenericImageView;
-use regex::Regex;
 
 #[derive(Clone)]
 pub struct AtlasEntry {

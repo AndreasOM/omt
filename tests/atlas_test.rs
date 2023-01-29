@@ -126,7 +126,7 @@ mod test {
 
 		#[test]
 		fn v2_simple_combine_with_autosize_without_maximum_border_7_works() -> anyhow::Result<()> {
-			let (test_dir, output) = temp_output("v2-simple-autosize-without-maximum-%d");
+			let (test_dir, output) = temp_output("v2-simple-autosize-without-maximum-border-7-%d");
 
 			let mut atlas_set = AtlasSet::default().with_border(7).with_inputs(
 				[
