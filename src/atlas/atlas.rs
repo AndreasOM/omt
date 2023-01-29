@@ -6,123 +6,15 @@ use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use image::{DynamicImage, GenericImage, GenericImageView, ImageFormat};
 use regex::Regex;
 
+use crate::atlas::AtlasEntry;
 use crate::atlas::AtlasFitter;
 
-#[derive(Clone)]
-pub struct Entry {
-	filename:   String,
-	pub image:  Option<DynamicImage>,
-	pub x:      u32,
-	pub y:      u32,
-	pub width:  u32,
-	pub height: u32,
-}
-
-impl std::fmt::Debug for Entry {
-	fn fmt(&self, f: &mut std::fmt::Formatter) -> std::result::Result<(), std::fmt::Error> {
-		f.debug_struct("Entry")
-			.field("filename", &self.filename)
-			//			.field("image", if self.image.is_some() {"YES"} else {"NO"} )
-			.field("x", &self.x)
-			.field("y", &self.y)
-			.field("width", &self.width)
-			.field("height", &self.height)
-			.finish()
-	}
-}
-impl Entry {
-	fn new(filename: &str, width: u32, height: u32) -> Entry {
-		Entry {
-			filename: filename.to_string(),
-			image:    None,
-			x:        0,
-			y:        0,
-			width:    width,
-			height:   height,
-		}
-	}
-
-	fn set_image(&mut self, image: DynamicImage) {
-		self.width = image.dimensions().0;
-		self.height = image.dimensions().1;
-		self.image = Some(image);
-	}
-
-	fn set_position(&mut self, x: u32, y: u32) {
-		self.x = x;
-		self.y = y;
-	}
-	fn get_basename(&self) -> String {
-		let basename = Path::new(&self.filename)
-			.file_name()
-			.unwrap()
-			.to_str()
-			.unwrap();
-		basename.to_string()
-	}
-	fn get_stem(&self) -> String {
-		let stem = Path::new(&self.filename)
-			.file_stem()
-			.unwrap()
-			.to_str()
-			.unwrap();
-		stem.to_string()
-	}
-	/*
-			sx = s[ 0 ].to_f/size
-			sy = s[ 1 ].to_f/size
-			ex = e[ 0 ].to_f/size
-			ey = e[ 1 ].to_f/size
-
-			t.scaleX = (ex-sx)
-			t.scaleY = (ey-sy)
-
-			def getMatrix
-				# :HACK: :TODO: add rotation
-				[
-					@scaleX	, 0.0		, @x,
-					0.0		, @scaleY	, @y
-				]
-			end
-	*/
-	fn get_matrix(&self, size: u32) -> [f32; 6] {
-		// :TODO: cleanup please
-		let sx = self.x as f32 / size as f32;
-		let sy = self.y as f32 / size as f32;
-		//		let ex = ( self.x + self.width ) as f32 / size as f32;
-		//		let ey = ( self.y + self.height ) as f32 / size as f32;
-		let scale_x = self.width as f32 / size as f32; //ex - sx;
-		let scale_y = self.height as f32 / size as f32; //ey - sy;
-		[scale_x, 0.0, sx, 0.0, scale_y, sy]
-	}
-}
-
-fn simple_format_u32(f: &str, n: u32) -> String {
-	let s = f.clone();
-	let re = Regex::new(r"(%d)").unwrap();
-
-	//	println!("simple_format_u32 {:?} with {:?}", s, re );
-	let s = re.replace_all(&s, |c: &regex::Captures| {
-		let placeholder = c.get(1).map_or("", |m| m.as_str());
-		//			println!("Found {:?}", placeholder );
-		match placeholder {
-			"" => "".to_string(),
-			"%d" => n.to_string(),
-			x => {
-				println!("simple_format_u32 got {:?}", x);
-				x.to_string()
-			},
-		}
-	});
-
-	s.to_string()
-}
-
 //#[derive()]
+#[derive(Default)]
 pub struct Atlas {
 	size:           u32,
 	border:         u32,
-	pub entries:    Vec<Entry>,
+	pub entries:    Vec<AtlasEntry>,
 	pub image:      Option<DynamicImage>,
 	atlas_filename: Option<String>,
 	image_filename: Option<String>,
@@ -140,7 +32,7 @@ impl std::fmt::Debug for Atlas {
 }
 
 impl Atlas {
-	fn new(size: u32, border: u32) -> Atlas {
+	pub fn new(size: u32, border: u32) -> Atlas {
 		Atlas {
 			size:           size,
 			border:         border,
@@ -151,7 +43,7 @@ impl Atlas {
 		}
 	}
 
-	pub fn add_entry(&mut self, entry: Entry) {
+	pub fn add_entry(&mut self, entry: AtlasEntry) {
 		self.entries.push(entry);
 	}
 
@@ -209,7 +101,7 @@ impl Atlas {
 		}
 	}
 
-	fn save_png(&self, filename: &str) -> anyhow::Result<()> {
+	pub fn save_png(&self, filename: &str) -> anyhow::Result<()> {
 		match self
 			.image
 			.as_ref()
@@ -278,7 +170,7 @@ impl Atlas {
 
 			let w = (matrix_buffer[0 * 3 + 0] * size as f32).trunc() as u32;
 			let h = (matrix_buffer[1 * 3 + 1] * size as f32).trunc() as u32;
-			let mut e = Entry::new(&name, w, h);
+			let mut e = AtlasEntry::new(&name, w, h);
 			let x = (matrix_buffer[0 * 3 + 2] * size as f32).trunc() as u32;
 			let y = (matrix_buffer[1 * 3 + 2] * size as f32).trunc() as u32;
 			e.set_position(x, y);
@@ -288,7 +180,7 @@ impl Atlas {
 	}
 
 	// :TODO: support compression
-	fn save_atlas(&self, filename: &str) -> anyhow::Result<()> {
+	pub fn save_atlas(&self, filename: &str) -> anyhow::Result<()> {
 		let mut f = match File::create(filename) {
 			Ok(f) => f,
 			Err(_) => anyhow::bail!("io"),
@@ -333,7 +225,7 @@ impl Atlas {
 		Ok(())
 	}
 
-	fn save_map(&self, filename: &str) -> anyhow::Result<()> {
+	pub fn save_map(&self, filename: &str) -> anyhow::Result<()> {
 		let mut f = match File::create(filename) {
 			Ok(f) => f,
 			Err(_) => anyhow::bail!("io"),
@@ -459,7 +351,7 @@ impl Atlas {
 				None => anyhow::bail!("Error converting path to string"),
 			};
 
-			let mut e = Entry::new(i_string, 0, 0);
+			let mut e = AtlasEntry::new(i_string, 0, 0);
 			e.set_image(img);
 			entries.push(e);
 		}
@@ -588,4 +480,25 @@ impl Atlas {
 
 		Ok(n)
 	}
+}
+
+pub fn simple_format_u32(f: &str, n: u32) -> String {
+	let s = f.clone();
+	let re = Regex::new(r"(%d)").unwrap();
+
+	//	println!("simple_format_u32 {:?} with {:?}", s, re );
+	let s = re.replace_all(&s, |c: &regex::Captures| {
+		let placeholder = c.get(1).map_or("", |m| m.as_str());
+		//			println!("Found {:?}", placeholder );
+		match placeholder {
+			"" => "".to_string(),
+			"%d" => n.to_string(),
+			x => {
+				println!("simple_format_u32 got {:?}", x);
+				x.to_string()
+			},
+		}
+	});
+
+	s.to_string()
 }

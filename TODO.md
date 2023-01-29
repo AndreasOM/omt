@@ -1,5 +1,6 @@
 # In Progress
 
+- [ ] Automagically detect size for atlas when combining
 
 # Suspended
 
@@ -11,6 +12,8 @@
 	[ ] Fix scaling issue
 
 # TODO
+
+- [ ] Add AtlasSet to handle multiple Atlases
 
 [ ] Use crchelper functions in packer
 [ ] Update packages for
@@ -50,6 +53,13 @@
 [ ] Asset tool needs to update paklist
 
 # DONE
+
+## 2023
+
+### January
+
+#### v0.8.x
+
 
 ## 2022
 
