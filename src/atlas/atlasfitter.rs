@@ -205,9 +205,11 @@ impl AtlasFitter {
 						"‼️ Image doesn't fit into empty page of size {} -> {:?}",
 						size, e
 					);
-					//					anyhow::bail!("‼️ Image doesn't fit into empty page");
+					return Vec::new();
+				//					anyhow::bail!("‼️ Image doesn't fit into empty page");
+				} else {
+					pages.push(p);
 				}
-				pages.push(p);
 			}
 		}
 		pages
