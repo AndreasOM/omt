@@ -171,6 +171,7 @@ impl AtlasSet {
 	}
 	pub fn with_inputs(mut self, inputs: Vec<&Path>) -> Self {
 		for input in inputs.iter() {
+			// println!("{:?}", &input);
 			self.inputs.push(input.to_path_buf());
 		}
 		self

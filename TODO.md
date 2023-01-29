@@ -13,13 +13,12 @@
 
 # TODO
 
-- [ ] Add AtlasSet to handle multiple Atlases
 
 [ ] Use crchelper functions in packer
 [ ] Update packages for
 	[ ] clap
 	[ ] shader-crusher
-	[ ] distance-field (as soon as it is release with new image (>0.24.x) dependency)
+	[ ] distance-field (as soon as it is released with new image (>0.24.x) dependency)
 [ ] omt-xcassets: Fix filter
 [ ] omt-xcassets: Implement mode fill
 [ ] omt-xcassets: Implement mode update
@@ -59,6 +58,8 @@
 ### January
 
 #### v0.8.x
+
+- [x] Add AtlasSet to handle multiple Atlases
 
 
 ## 2022

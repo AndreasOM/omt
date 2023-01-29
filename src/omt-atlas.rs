@@ -1,3 +1,4 @@
+use omt::atlas::AtlasSet;
 use std::process;
 
 use clap::{Parser, Subcommand};
@@ -69,6 +70,13 @@ fn main() -> anyhow::Result<()> {
 						println!("\t{:?}", i);
 					}
 					println!("]");
+					let mut atlas_set = AtlasSet::default()
+						.with_border( border )
+						.with_target_size( size )
+						.with_inputs( input.iter().map(|p| p.as_path() ).collect() )
+					;
+					atlas_set.refit()?;
+					/*
 					match Atlas::combine(
 						&output,
 						size,
@@ -77,6 +85,8 @@ fn main() -> anyhow::Result<()> {
 						&input,
 						reference_path.as_ref(),
 					) {
+						*/
+					match atlas_set.save( &output, reference_path.as_ref().map(|p| p.as_path() ) ) {
 						Ok(1) => {
 							println!("1 atlas created");
 							process::exit(0);
