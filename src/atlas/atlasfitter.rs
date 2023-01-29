@@ -201,7 +201,10 @@ impl AtlasFitter {
 			if !did_fit {
 				let mut p = Page::new(size, border);
 				if !p.fit_entry(&e) {
-					println!("‼️ Image doesn't fit into empty page {:?}", e);
+					println!(
+						"‼️ Image doesn't fit into empty page of size {} -> {:?}",
+						size, e
+					);
 					//					anyhow::bail!("‼️ Image doesn't fit into empty page");
 				}
 				pages.push(p);

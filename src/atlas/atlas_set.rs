@@ -12,6 +12,7 @@ pub struct AtlasSet {
 	border:         u32,
 	output:         Option<PathBuf>,
 	target_size:    Option<u32>,
+	maximum_size:   Option<u32>,
 	reference_path: Option<PathBuf>,
 	inputs:         Vec<PathBuf>,
 	atlases:        Vec<Atlas>,
@@ -57,7 +58,9 @@ impl AtlasSet {
 
 		//		println!("atlas_fitter {:#?}", atlas_fitter);
 
-		let size = self.target_size.unwrap_or(1024); // :TODO: auto fit
+		let size = self
+			.target_size
+			.expect("Pass size or use autofit() with maximum_size"); // :TODO: auto fit
 		let pages = atlas_fitter.fit(size, self.border);
 		//		println!("pages {:#?}", pages);
 
@@ -79,6 +82,32 @@ impl AtlasSet {
 		self.atlases = atlases;
 		Ok(self.atlases.len() as u32)
 	}
+
+	pub fn autosize(&mut self) -> anyhow::Result<u32> {
+		// brute force for now
+		let mut size = 2;
+		let maximum_size = self.maximum_size.unwrap_or(65536); // :TODO: decide on an actually reasonable limit
+		let mut n;
+		loop {
+			self.target_size = Some(size);
+			n = self.refit()?;
+			if n == 1 {
+				println!("✅ Using single atlas at size: {}", size);
+				break;
+			}
+			let next_size = size * 2;
+			if next_size > maximum_size {
+				println!("🔶 Using maximum size: {}", maximum_size);
+				break;
+			}
+			size = next_size;
+		}
+
+		self.target_size = Some(size);
+
+		Ok(n)
+	}
+
 	pub fn save(&mut self, output: &Path, reference_path: Option<&Path>) -> anyhow::Result<u32> {
 		for a in self.atlases.iter_mut() {
 			a.blit_entries();
@@ -161,6 +190,9 @@ impl AtlasSet {
 		self.target_size = Some(target_size);
 		self
 	}
+	pub fn target_size(&self) -> &Option<u32> {
+		&self.target_size
+	}
 	pub fn with_border(mut self, border: u32) -> Self {
 		self.border = border;
 		self
@@ -174,6 +206,10 @@ impl AtlasSet {
 			// println!("{:?}", &input);
 			self.inputs.push(input.to_path_buf());
 		}
+		self
+	}
+	pub fn with_maximum_size(mut self, maximum_size: u32) -> Self {
+		self.maximum_size = Some(maximum_size);
 		self
 	}
 }

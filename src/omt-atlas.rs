@@ -1,9 +1,9 @@
-use omt::atlas::AtlasSet;
 use std::process;
 
 use clap::{Parser, Subcommand};
 use omt::atlas::Atlas;
 use omt::atlas::AtlasPreviewer;
+use omt::atlas::AtlasSet;
 
 #[derive(Debug, Parser)]
 #[clap(name = "omt-atlas")]
@@ -20,7 +20,9 @@ enum Commands {
 		#[clap(short, long, action)]
 		output:         std::path::PathBuf,
 		#[clap(short, long, action)]
-		size:           u32,
+		size:           Option<u32>,
+		#[clap(short, long, action)]
+		maximum_size:   Option<u32>,
 		#[clap(short, long, action, default_value_t = 0)]
 		border:         u32,
 		#[clap(short, long, min_values = 1, required = true)]
@@ -51,6 +53,7 @@ fn main() -> anyhow::Result<()> {
 				Commands::Combine {
 					output,
 					size,
+					maximum_size,
 					border,
 					input,
 					reference_path,
@@ -71,10 +74,16 @@ fn main() -> anyhow::Result<()> {
 					}
 					println!("]");
 					let mut atlas_set = AtlasSet::default()
-						.with_border( border )
-						.with_target_size( size )
-						.with_inputs( input.iter().map(|p| p.as_path() ).collect() )
-					;
+						.with_border(border)
+						.with_inputs(input.iter().map(|p| p.as_path()).collect());
+					if let Some(size) = &size {
+						atlas_set = atlas_set.with_target_size(*size);
+					};
+					println!("{:?}", maximum_size);
+					if let Some(maximum_size) = &maximum_size {
+						atlas_set = atlas_set.with_maximum_size(*maximum_size);
+						atlas_set.autosize()?;
+					};
 					atlas_set.refit()?;
 					/*
 					match Atlas::combine(
@@ -86,7 +95,7 @@ fn main() -> anyhow::Result<()> {
 						reference_path.as_ref(),
 					) {
 						*/
-					match atlas_set.save( &output, reference_path.as_ref().map(|p| p.as_path() ) ) {
+					match atlas_set.save(&output, reference_path.as_ref().map(|p| p.as_path())) {
 						Ok(1) => {
 							println!("1 atlas created");
 							process::exit(0);

@@ -1,6 +1,5 @@
 # In Progress
 
-- [ ] Automagically detect size for atlas when combining
 
 # Suspended
 
@@ -13,6 +12,8 @@
 
 # TODO
 
+- [ ] omt-atlas: Actually add border as requested
+- [ ] omt-atlas: Add multi atlas support to viewer
 
 [ ] Use crchelper functions in packer
 [ ] Update packages for
@@ -59,7 +60,8 @@
 
 #### v0.8.x
 
-- [x] Add AtlasSet to handle multiple Atlases
+- [x] omt-atlas: Add AtlasSet to handle multiple Atlases
+- [x] omt-atlas: Automagically detect size for atlas when combining
 
 
 ## 2022
