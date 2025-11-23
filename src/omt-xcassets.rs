@@ -1,36 +1,36 @@
 use std::process;
 
-use clap::{App, Arg, SubCommand};
+use clap::{Arg, Command};
 use omt::xcassets::Xcassets;
 
 fn main() {
 	const VERSION: &str = env!("CARGO_PKG_VERSION");
-	let matches = App::new("omt-xcassets")
+	let matches = Command::new("omt-xcassets")
 		.version(VERSION)
 		.author("Andreas N. <andreas@omni-mad.com>")
 		.about("Handles .xcassets")
 		.subcommand(
-			SubCommand::with_name("generate")
+			Command::new("generate")
 				.arg(
-					Arg::with_name("input")
+					Arg::new("input")
 						.long("input")
 						.value_name("INPUT")
 						.help("Set the input high-resolution image")
-						.takes_value(true),
+						.num_args(1),
 				)
 				.arg(
-					Arg::with_name("output")
+					Arg::new("output")
 						.long("output")
 						.value_name("OUTPUT")
 						.help("Set the output .xcassets")
-						.takes_value(true),
+						.num_args(1),
 				)
 				.arg(
-					Arg::with_name("mode")
+					Arg::new("mode")
 						.long("mode")
 						.value_name("mode")
 						.help("Set the mode: [fill|update|force]")
-						.takes_value(true),
+						.num_args(1),
 				),
 		)
 		.get_matches();
@@ -39,9 +39,21 @@ fn main() {
 	//	println!("{:?}", matches.subcommand());
 
 	if let Some(("generate", sub_matches)) = matches.subcommand() {
-		let mode = sub_matches.value_of("mode").unwrap_or("fill").to_string();
-		let output = sub_matches.value_of("output").unwrap_or("").to_string();
-		let input = sub_matches.value_of("input").unwrap_or("").to_string();
+		let mode = sub_matches
+			.get_one::<String>("mode")
+			.map(String::as_str)
+			.unwrap_or("fill")
+			.to_string();
+		let output = sub_matches
+			.get_one::<String>("output")
+			.map(String::as_str)
+			.unwrap_or("")
+			.to_string();
+		let input = sub_matches
+			.get_one::<String>("input")
+			.map(String::as_str)
+			.unwrap_or("")
+			.to_string();
 
 		println!("mode    : {:?}", mode);
 		println!("output  : {:?}", output);

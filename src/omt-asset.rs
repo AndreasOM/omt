@@ -1,59 +1,60 @@
 use std::process;
 
-use clap::{App, Arg, SubCommand};
+use clap::{Arg, Command};
 use omt::asset::AssetBuilder;
 
 fn main() {
 	// omt-asset build --content-directory Content --temp-directory Temp --data-directory Data --archive App/data/base.omar --paklist Data/data.paklist
 
 	const VERSION: &str = env!("CARGO_PKG_VERSION");
-	let matches = App::new("omt-asset")
+	let matches = Command::new("omt-asset")
 		.version(VERSION)
 		.author("Andreas N. <andreas@omni-mad.com>")
 		.about("Handles assets")
 		.subcommand(
-			SubCommand::with_name("build")
+			Command::new("build")
 				.arg(
-					Arg::with_name("content-directory")
+					Arg::new("content-directory")
 						.long("content-directory")
 						.value_name("CONTENT-DIRECTORY")
 						.help("Set the content directory")
-						.takes_value(true),
+						.num_args(1),
 				)
 				.arg(
-					Arg::with_name("data-directory")
+					Arg::new("data-directory")
 						.long("data-directory")
 						.value_name("DATA-DIRECTORY")
 						.help("Set the data directory")
-						.takes_value(true),
+						.num_args(1),
 				)
 				.arg(
-					Arg::with_name("temp-directory")
+					Arg::new("temp-directory")
 						.long("temp-directory")
 						.value_name("TEMP-DIRECTORY")
 						.help("Set the temp directory")
-						.takes_value(true),
+						.num_args(1),
 				)
 				.arg(
-					Arg::with_name("archive")
+					Arg::new("archive")
 						.long("archive")
 						.value_name("archive")
 						.help("Set the archive filename")
-						.takes_value(true),
+						.num_args(1),
 				)
 				.arg(
-					Arg::with_name("paklist")
+					Arg::new("paklist")
 						.long("paklist")
 						.value_name("PAKLIST")
 						.help("Set the pakelist name")
-						.takes_value(true),
+						.num_args(1),
 				)
 				.arg(
-					Arg::with_name("dry-run")
+					Arg::new("dry-run")
 						.long("dry-run")
 						.value_name("dry-run")
 						.help("Enable dry run to show commands without actually running them")
-						.takes_value(false),
+						.num_args(0)
+						.action(clap::ArgAction::SetTrue),
 				),
 		)
 		.get_matches();
@@ -63,23 +64,31 @@ fn main() {
 
 	if let Some(("build", sub_matches)) = matches.subcommand() {
 		let content_directory = sub_matches
-			.value_of("content-directory")
+			.get_one::<String>("content-directory")
+			.map(String::as_str)
 			.unwrap_or(".")
 			.to_string();
 		let data_directory = sub_matches
-			.value_of("data-directory")
+			.get_one::<String>("data-directory")
+			.map(String::as_str)
 			.unwrap_or(".")
 			.to_string();
 		let temp_directory = sub_matches
-			.value_of("temp-directory")
+			.get_one::<String>("temp-directory")
+			.map(String::as_str)
 			.unwrap_or(".")
 			.to_string();
 		let archive = sub_matches
-			.value_of("archive")
+			.get_one::<String>("archive")
+			.map(String::as_str)
 			.unwrap_or("out.omar")
 			.to_string();
-		let paklist = sub_matches.value_of("paklist").unwrap_or("").to_string();
-		let dry_run = sub_matches.occurrences_of("dry-run") > 0;
+		let paklist = sub_matches
+			.get_one::<String>("paklist")
+			.map(String::as_str)
+			.unwrap_or("")
+			.to_string();
+		let dry_run = sub_matches.get_flag("dry-run");
 
 		println!("content_directory: {:?}", content_directory);
 		println!("data_directory   : {:?}", data_directory);

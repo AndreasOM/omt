@@ -1,36 +1,36 @@
 use std::process;
 
-use clap::{App, Arg, SubCommand};
+use clap::{Arg, Command};
 use omt::shader::Shader;
 
 fn main() {
 	const VERSION: &str = env!("CARGO_PKG_VERSION");
-	let matches = App::new("omt-shader")
+	let matches = Command::new("omt-shader")
 		.version(VERSION)
 		.author("Andreas N. <andreas@omni-mad.com>")
 		.about("Handles shaders")
 		.subcommand(
-			SubCommand::with_name("build")
+			Command::new("build")
 				.arg(
-					Arg::with_name("input")
+					Arg::new("input")
 						.long("input")
 						.value_name("INPUT")
 						.help("Set the input filename")
-						.takes_value(true),
+						.num_args(1),
 				)
 				.arg(
-					Arg::with_name("output")
+					Arg::new("output")
 						.long("output")
 						.value_name("OUTPUT")
 						.help("Set the output filename")
-						.takes_value(true),
+						.num_args(1),
 				)
 				.arg(
-					Arg::with_name("mode")
+					Arg::new("mode")
 						.long("mode")
 						.value_name("mode")
 						.help("Set the mode: [copy|transpile|crush]")
-						.takes_value(true),
+						.num_args(1),
 				),
 		)
 		.get_matches();
@@ -39,9 +39,21 @@ fn main() {
 	//	println!("{:?}", matches.subcommand());
 
 	if let Some(("build", sub_matches)) = matches.subcommand() {
-		let mode = sub_matches.value_of("mode").unwrap_or("copy").to_string();
-		let output = sub_matches.value_of("output").unwrap_or("").to_string();
-		let input = sub_matches.value_of("input").unwrap_or("").to_string();
+		let mode = sub_matches
+			.get_one::<String>("mode")
+			.map(String::as_str)
+			.unwrap_or("copy")
+			.to_string();
+		let output = sub_matches
+			.get_one::<String>("output")
+			.map(String::as_str)
+			.unwrap_or("")
+			.to_string();
+		let input = sub_matches
+			.get_one::<String>("input")
+			.map(String::as_str)
+			.unwrap_or("")
+			.to_string();
 
 		println!("mode    : {:?}", mode);
 		println!("output  : {:?}", output);

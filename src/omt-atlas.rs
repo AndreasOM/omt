@@ -6,45 +6,45 @@ use omt::atlas::AtlasPreviewer;
 use omt::atlas::AtlasSet;
 
 #[derive(Debug, Parser)]
-#[clap(name = "omt-atlas")]
-#[clap(author, version)]
-#[clap(about = "Part of the OMT suite of game tools. Handles texture atlases.", long_about = None)]
+#[command(name = "omt-atlas")]
+#[command(author, version)]
+#[command(about = "Part of the OMT suite of game tools. Handles texture atlases.", long_about = None)]
 struct Cli {
-	#[clap(subcommand)]
+	#[command(subcommand)]
 	command: Option<Commands>,
 }
 
 #[derive(Debug, Subcommand)]
 enum Commands {
 	Combine {
-		#[clap(short, long, action)]
+		#[arg(short, long)]
 		output:         std::path::PathBuf,
-		#[clap(short, long, action)]
+		#[arg(short, long)]
 		size:           Option<u32>,
-		#[clap(short, long, action)]
+		#[arg(short, long)]
 		maximum_size:   Option<u32>,
-		#[clap(short, long, action, default_value_t = 0)]
+		#[arg(short, long, default_value_t = 0)]
 		border:         u32,
-		#[clap(short, long, min_values = 1, required = true)]
+		#[arg(short, long, num_args = 1.., required = true)]
 		//		#[clap(short, long, required = true)] // use above, since this is not good enough
 		input: Vec<std::path::PathBuf>,
-		#[clap(short = 'r', long, action)]
+		#[arg(short = 'r', long)]
 		reference_path: Option<std::path::PathBuf>,
 	},
 	Info {
-		#[clap(short, long, action)]
+		#[arg(short, long)]
 		input: String, // :TODO: std::path::PathBuf,
 	},
 	Preview {
-		#[clap(short, long, action)]
+		#[arg(short, long)]
 		input: String, // :TODO: std::path::PathBuf,
 	},
 	Uncombine {
-		#[clap(short, long, action)]
+		#[arg(short, long)]
 		input:       String, // :TODO: std::path::PathBuf,
-		#[clap(short, long, action, default_value = ".")]
+		#[arg(short, long, default_value = ".")]
 		output_path: std::path::PathBuf,
-		#[clap(short, long, action)]
+		#[arg(short, long)]
 		force:       bool,
 	},
 }

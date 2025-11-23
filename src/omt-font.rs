@@ -1,6 +1,6 @@
 use std::process;
 
-use clap::{App, Arg, SubCommand};
+use clap::{Arg, Command};
 use omt::font::Font;
 use omt::font::FontPreviewer;
 
@@ -9,94 +9,109 @@ fn main() {
 	// omt-font create --output test-font --texsize 1024 --size 40 --ttf test.ttf
 
 	const VERSION: &str = env!("CARGO_PKG_VERSION");
-	let matches = App::new("omt-font")
+	let matches = Command::new("omt-font")
 		.version(VERSION)
 		.author("Andreas N. <andreas@omni-mad.com>")
 		.about("Handles fonts")
 		.subcommand(
-			SubCommand::with_name("create")
+			Command::new("create")
 				.arg(
-					Arg::with_name("output")
+					Arg::new("output")
 						.long("output")
 						.value_name("OUTPUT")
 						.help("Set the output")
-						.takes_value(true),
+						.num_args(1),
 				)
 				.arg(
-					Arg::with_name("size")
+					Arg::new("size")
 						.long("size")
 						.value_name("SIZE")
 						.help("Set the font size")
-						.takes_value(true),
+						.num_args(1),
 				)
 				.arg(
-					Arg::with_name("texsize")
+					Arg::new("texsize")
 						.long("texsize")
 						.value_name("TEXSIZE")
 						.help("Set the texture size")
-						.takes_value(true),
+						.num_args(1),
 				)
 				.arg(
-					Arg::with_name("border")
+					Arg::new("border")
 						.long("border")
 						.value_name("BORDER")
 						.help("Set the border size")
-						.takes_value(true),
+						.num_args(1),
 				)
 				.arg(
-					Arg::with_name("distancefield-scale")
+					Arg::new("distancefield-scale")
 						.long("distancefield-scale")
 						.value_name("DISTANCEFIELD-SCALE")
 						.help("Set/enable the distancefield scale")
-						.takes_value(true),
+						.num_args(1),
 				)
 				.arg(
-					Arg::with_name("distancefield-max-distance")
+					Arg::new("distancefield-max-distance")
 						.long("distancefield-max-distance")
 						.value_name("DISTANCEFIELD-MAX-DISTANCE")
 						.help("Set the distancefield maximum distance")
-						.takes_value(true),
+						.num_args(1),
 				)
 				.arg(
-					Arg::with_name("input")
+					Arg::new("input")
 						.long("input")
 						.value_name("INPUT")
 						.help("Set the input font(s) (only .ttf supported)")
-						.takes_value(true)
-						.multiple(true),
+						.num_args(1..),
 				),
 		)
 		.subcommand(
-			SubCommand::with_name("preview").arg(
-				Arg::with_name("input")
+			Command::new("preview").arg(
+				Arg::new("input")
 					.long("input")
 					.value_name("INPUT")
 					.help("Set the input")
-					.takes_value(true),
+					.num_args(1),
 			),
 		)
 		.get_matches();
 
 	if let Some(("create", sub_matches)) = matches.subcommand() {
 		let output = sub_matches
-			.value_of("output")
+			.get_one::<String>("output")
+			.map(String::as_str)
 			.unwrap_or("output-font")
 			.to_string();
 		let texsize = sub_matches
-			.value_of("texsize")
+			.get_one::<String>("texsize")
+			.map(String::as_str)
 			.unwrap_or("1024")
 			.to_string();
-		let size = sub_matches.value_of("size").unwrap_or("16").to_string();
-		let border = sub_matches.value_of("border").unwrap_or("0").to_string();
+		let size = sub_matches
+			.get_one::<String>("size")
+			.map(String::as_str)
+			.unwrap_or("16")
+			.to_string();
+		let border = sub_matches
+			.get_one::<String>("border")
+			.map(String::as_str)
+			.unwrap_or("0")
+			.to_string();
 		let df_scale = sub_matches
-			.value_of("distancefield-scale")
+			.get_one::<String>("distancefield-scale")
+			.map(String::as_str)
 			.unwrap_or("4")
 			.to_string();
 		let df_max_distance = sub_matches
-			.value_of("distancefield-max-distance")
+			.get_one::<String>("distancefield-max-distance")
+			.map(String::as_str)
 			.unwrap_or("2")
 			.to_string();
-		let input = sub_matches.values_of("input").unwrap().collect::<Vec<_>>();
+		let input = sub_matches
+			.get_many::<String>("input")
+			.unwrap()
+			.map(String::as_str)
+			.collect::<Vec<_>>();
 
 		let texsize = match u32::from_str_radix(&texsize, 10) {
 			Ok(n) => n,
@@ -179,7 +194,8 @@ fn main() {
 	}
 	if let Some(("preview", sub_matches)) = matches.subcommand() {
 		let input = sub_matches
-			.value_of("input")
+			.get_one::<String>("input")
+			.map(String::as_str)
 			.unwrap_or("output-font")
 			.to_string();
 		println!("input         : {:?}", input);
