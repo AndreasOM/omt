@@ -1,6 +1,7 @@
 use std::fs;
 
 use rlua::Lua;
+use rlua::RluaCompat;
 
 pub struct Script {}
 
