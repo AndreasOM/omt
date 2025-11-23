@@ -39,6 +39,14 @@ enum Commands {
 		#[clap(short, long, action)]
 		input: String, // :TODO: std::path::PathBuf,
 	},
+	Uncombine {
+		#[clap(short, long, action)]
+		input:       String, // :TODO: std::path::PathBuf,
+		#[clap(short, long, action, default_value = ".")]
+		output_path: std::path::PathBuf,
+		#[clap(short, long, action)]
+		force:       bool,
+	},
 }
 
 fn main() -> anyhow::Result<()> {
@@ -132,6 +140,30 @@ fn main() -> anyhow::Result<()> {
 						},
 						Err(e) => {
 							println!("Error getting info from atlas: {}", &e);
+							process::exit(-1);
+						},
+					}
+				},
+				Commands::Uncombine {
+					input,
+					output_path,
+					force,
+				} => {
+					println!("uncombine");
+					println!("input       : {:?}", input);
+					println!("output_path : {:?}", output_path);
+					println!("force       : {:?}", force);
+					match Atlas::uncombine(&input, &output_path, force) {
+						Ok((extracted, skipped)) => {
+							println!("\nSummary:");
+							println!("  Extracted: {} files", extracted);
+							if skipped > 0 {
+								println!("  Skipped  : {} files", skipped);
+							}
+							process::exit(0);
+						},
+						Err(e) => {
+							println!("Error extracting from atlas: {}", &e);
 							process::exit(-1);
 						},
 					}

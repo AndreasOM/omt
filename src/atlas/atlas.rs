@@ -332,6 +332,66 @@ impl Atlas {
 		}
 	}
 
+	pub fn uncombine(input: &str, output_path: &Path, force: bool) -> anyhow::Result<(u32, u32)> {
+		let atlases = Atlas::all_for_template(&input);
+
+		if atlases.is_empty() {
+			anyhow::bail!("No matching atlas found.");
+		}
+
+		let mut extracted_count = 0u32;
+		let mut skipped_count = 0u32;
+
+		for a in &atlases {
+			// Verify we have the atlas image loaded
+			let atlas_image = match &a.image {
+				Some(img) => img,
+				None => {
+					println!("Warning: Atlas image not loaded, skipping");
+					continue;
+				},
+			};
+
+			// Extract each entry
+			for e in &a.entries {
+				// Build output path preserving directory structure
+				let output_file_path = output_path.join(&e.filename);
+
+				// Check if file exists and handle accordingly
+				if output_file_path.exists() && !force {
+					println!(
+						"Warning: {} already exists, skipping (use --force to overwrite)",
+						output_file_path.display()
+					);
+					skipped_count += 1;
+					continue;
+				}
+
+				// Create parent directories if needed
+				if let Some(parent) = output_file_path.parent() {
+					std::fs::create_dir_all(parent)?;
+				}
+
+				// Extract sub-image from atlas
+				let sub_image = atlas_image.crop_imm(e.x, e.y, e.width, e.height);
+
+				// Save extracted image
+				match sub_image.save(&output_file_path) {
+					Ok(_) => {
+						println!("Extracted: {}", output_file_path.display());
+						extracted_count += 1;
+					},
+					Err(e) => {
+						println!("Error saving {}: {:?}", output_file_path.display(), e);
+						anyhow::bail!("Failed to save extracted image");
+					},
+				}
+			}
+		}
+
+		Ok((extracted_count, skipped_count))
+	}
+
 	pub fn combine(
 		output: &PathBuf,
 		size: u32,
