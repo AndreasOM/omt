@@ -16,7 +16,7 @@ impl FontPreviewer {
 	pub fn preview(input: &str) -> anyhow::Result<u32> {
 		let start_time = SystemTime::now();
 		let mut scale; // = 1.0;
-			   //		let mut frame_col: u32 = 0xa020a0ff;
+				 //		let mut frame_col: u32 = 0xa020a0ff;
 
 		let font = match Font::load(&input) {
 			Err(e) => {

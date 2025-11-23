@@ -16,7 +16,7 @@ impl AtlasPreviewer {
 	pub fn preview(input: &str) -> anyhow::Result<u32> {
 		let start_time = SystemTime::now();
 		let mut scale; // = 1.0;
-			   //		let mut frame_col: u32 = 0xa020a0ff;
+				 //		let mut frame_col: u32 = 0xa020a0ff;
 
 		let atlases = Atlas::all_for_template(&input);
 		//		println!("{:?}", atlases );

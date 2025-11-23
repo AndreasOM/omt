@@ -159,11 +159,11 @@ impl Page {
 			if candidates.len() > 0 {
 				// find best candidate
 				let best_candidate_index = 0; // :TODO: actually find best candidate
-							  /*
-							  for ci in 0..candidates.len() {
-								  //
-							  }
-							  */
+								  /*
+								  for ci in 0..candidates.len() {
+									  //
+								  }
+								  */
 				//				println!("Got candidate rows. Using best one {:?}", candidates[ best_candidate_index ] );
 				self.fit_entry_to_row_with_index(entry, candidates[best_candidate_index])
 			} else {
