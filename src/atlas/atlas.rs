@@ -63,7 +63,7 @@ impl Atlas {
 		}
 	}
 
-	fn new_from_atlas(atlasname: &str, size: u32) -> Atlas {
+	fn new_from_atlas(atlasname: &str, size: u32) -> anyhow::Result<Atlas> {
 		let mut a = Atlas {
 			size:           size,
 			border:         0,
@@ -73,12 +73,9 @@ impl Atlas {
 			image_filename: None,
 		};
 
-		match a.load_atlas(&atlasname, a.size) {
-			Err(e) => println!("{:?}", e),
-			_ => {},
-		};
+		a.load_atlas(&atlasname, a.size)?;
 
-		a
+		Ok(a)
 	}
 
 	fn blit(
@@ -163,6 +160,15 @@ impl Atlas {
 			let mut name = String::from_utf8(name_buffer.to_vec()).unwrap();
 			let first_zero = name.find("\u{0}").unwrap_or(name.len());
 			name.truncate(first_zero);
+
+			// Security check: reject absolute paths
+			if name.starts_with('/') {
+				anyhow::bail!(
+					"Atlas entry contains absolute path: '{}'. This is not allowed.",
+					name
+				);
+			}
+
 			let mut matrix_buffer = [0f32; 6];
 			for m in &mut matrix_buffer {
 				*m = bufreader.read_f32::<LittleEndian>().unwrap_or(0.0);
@@ -255,7 +261,7 @@ impl Atlas {
 		println!("Atlas::hello()");
 	}
 
-	pub fn all_for_template(input: &str) -> Vec<Atlas> {
+	pub fn all_for_template(input: &str) -> anyhow::Result<Vec<Atlas>> {
 		let mut result = Vec::new();
 		let mut n = 0;
 		loop {
@@ -281,7 +287,7 @@ impl Atlas {
 
 			let size = img.dimensions().0;
 
-			let mut a = Atlas::new_from_atlas(&atlasname, size);
+			let mut a = Atlas::new_from_atlas(&atlasname, size)?;
 			a.image_filename = Some(pngname.to_string());
 			a.image = Some(img);
 
@@ -294,11 +300,11 @@ impl Atlas {
 				break;
 			}
 		}
-		result
+		Ok(result)
 	}
 
 	pub fn info(input: &str) -> anyhow::Result<u32> {
-		let atlases = Atlas::all_for_template(&input);
+		let atlases = Atlas::all_for_template(&input)?;
 
 		for a in &atlases {
 			//			println!("Atlas {} {}", atlasname, pngname);
@@ -333,7 +339,7 @@ impl Atlas {
 	}
 
 	pub fn uncombine(input: &str, output_path: &Path, force: bool) -> anyhow::Result<(u32, u32)> {
-		let atlases = Atlas::all_for_template(&input);
+		let atlases = Atlas::all_for_template(&input)?;
 
 		if atlases.is_empty() {
 			anyhow::bail!("No matching atlas found.");
