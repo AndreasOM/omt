@@ -65,7 +65,7 @@ byteorder = "1.4.3"
 clap = { version = "4", features = ["derive", "cargo", "env", "unicode", "wrap_help"] }
 crc = "3.0.0"
 glob = "~0.3.0"
-image = "0.24.3"
+image = "0.24.9"
 minifb = "0.23.0"
 regex = "1.5.6"
 yaml-rust = "~0.4.3"
