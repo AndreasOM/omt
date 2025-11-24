@@ -1,60 +1,34 @@
 use std::process;
 
-use clap::{Arg, Command};
+use clap::{Parser, Subcommand};
 use omt::shader::Shader;
 
+#[derive(Debug, Parser)]
+#[command(name = "omt-shader")]
+#[command(version)]
+#[command(author = "Andreas N. <andreas@omni-mad.com>")]
+#[command(about = "Handles shaders")]
+struct Cli {
+	#[command(subcommand)]
+	command: Option<Commands>,
+}
+
+#[derive(Debug, Subcommand)]
+enum Commands {
+	Build {
+		#[arg(long, value_name = "INPUT", help = "Set the input filename", default_value = "")]
+		input: String,
+		#[arg(long, value_name = "OUTPUT", help = "Set the output filename", default_value = "")]
+		output: String,
+		#[arg(long, value_name = "mode", help = "Set the mode: [copy|transpile|crush]", default_value = "copy")]
+		mode: String,
+	},
+}
+
 fn main() {
-	const VERSION: &str = env!("CARGO_PKG_VERSION");
-	let matches = Command::new("omt-shader")
-		.version(VERSION)
-		.author("Andreas N. <andreas@omni-mad.com>")
-		.about("Handles shaders")
-		.subcommand(
-			Command::new("build")
-				.arg(
-					Arg::new("input")
-						.long("input")
-						.value_name("INPUT")
-						.help("Set the input filename")
-						.num_args(1),
-				)
-				.arg(
-					Arg::new("output")
-						.long("output")
-						.value_name("OUTPUT")
-						.help("Set the output filename")
-						.num_args(1),
-				)
-				.arg(
-					Arg::new("mode")
-						.long("mode")
-						.value_name("mode")
-						.help("Set the mode: [copy|transpile|crush]")
-						.num_args(1),
-				),
-		)
-		.get_matches();
+	let cli = Cli::parse();
 
-	//	println!("{:?}", matches);
-	//	println!("{:?}", matches.subcommand());
-
-	if let Some(("build", sub_matches)) = matches.subcommand() {
-		let mode = sub_matches
-			.get_one::<String>("mode")
-			.map(String::as_str)
-			.unwrap_or("copy")
-			.to_string();
-		let output = sub_matches
-			.get_one::<String>("output")
-			.map(String::as_str)
-			.unwrap_or("")
-			.to_string();
-		let input = sub_matches
-			.get_one::<String>("input")
-			.map(String::as_str)
-			.unwrap_or("")
-			.to_string();
-
+	if let Some(Commands::Build { input, output, mode }) = cli.command {
 		println!("mode    : {:?}", mode);
 		println!("output  : {:?}", output);
 		println!("input   : {:?}", input);

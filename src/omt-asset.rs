@@ -1,95 +1,50 @@
 use std::process;
 
-use clap::{Arg, Command};
+use clap::{Parser, Subcommand};
 use omt::asset::AssetBuilder;
+
+#[derive(Debug, Parser)]
+#[command(name = "omt-asset")]
+#[command(version)]
+#[command(author = "Andreas N. <andreas@omni-mad.com>")]
+#[command(about = "Handles assets")]
+struct Cli {
+	#[command(subcommand)]
+	command: Option<Commands>,
+}
+
+#[derive(Debug, Subcommand)]
+enum Commands {
+	Build {
+		#[arg(long, value_name = "CONTENT-DIRECTORY", help = "Set the content directory", default_value = ".")]
+		content_directory: String,
+		#[arg(long, value_name = "DATA-DIRECTORY", help = "Set the data directory", default_value = ".")]
+		data_directory: String,
+		#[arg(long, value_name = "TEMP-DIRECTORY", help = "Set the temp directory", default_value = ".")]
+		temp_directory: String,
+		#[arg(long, value_name = "archive", help = "Set the archive filename", default_value = "out.omar")]
+		archive: String,
+		#[arg(long, value_name = "PAKLIST", help = "Set the pakelist name", default_value = "")]
+		paklist: String,
+		#[arg(long, value_name = "dry-run", help = "Enable dry run to show commands without actually running them")]
+		dry_run: bool,
+	},
+}
 
 fn main() {
 	// omt-asset build --content-directory Content --temp-directory Temp --data-directory Data --archive App/data/base.omar --paklist Data/data.paklist
 
-	const VERSION: &str = env!("CARGO_PKG_VERSION");
-	let matches = Command::new("omt-asset")
-		.version(VERSION)
-		.author("Andreas N. <andreas@omni-mad.com>")
-		.about("Handles assets")
-		.subcommand(
-			Command::new("build")
-				.arg(
-					Arg::new("content-directory")
-						.long("content-directory")
-						.value_name("CONTENT-DIRECTORY")
-						.help("Set the content directory")
-						.num_args(1),
-				)
-				.arg(
-					Arg::new("data-directory")
-						.long("data-directory")
-						.value_name("DATA-DIRECTORY")
-						.help("Set the data directory")
-						.num_args(1),
-				)
-				.arg(
-					Arg::new("temp-directory")
-						.long("temp-directory")
-						.value_name("TEMP-DIRECTORY")
-						.help("Set the temp directory")
-						.num_args(1),
-				)
-				.arg(
-					Arg::new("archive")
-						.long("archive")
-						.value_name("archive")
-						.help("Set the archive filename")
-						.num_args(1),
-				)
-				.arg(
-					Arg::new("paklist")
-						.long("paklist")
-						.value_name("PAKLIST")
-						.help("Set the pakelist name")
-						.num_args(1),
-				)
-				.arg(
-					Arg::new("dry-run")
-						.long("dry-run")
-						.value_name("dry-run")
-						.help("Enable dry run to show commands without actually running them")
-						.num_args(0)
-						.action(clap::ArgAction::SetTrue),
-				),
-		)
-		.get_matches();
+	let cli = Cli::parse();
 
-	//	println!("{:?}", matches);
-	//	println!("{:?}", matches.subcommand());
-
-	if let Some(("build", sub_matches)) = matches.subcommand() {
-		let content_directory = sub_matches
-			.get_one::<String>("content-directory")
-			.map(String::as_str)
-			.unwrap_or(".")
-			.to_string();
-		let data_directory = sub_matches
-			.get_one::<String>("data-directory")
-			.map(String::as_str)
-			.unwrap_or(".")
-			.to_string();
-		let temp_directory = sub_matches
-			.get_one::<String>("temp-directory")
-			.map(String::as_str)
-			.unwrap_or(".")
-			.to_string();
-		let archive = sub_matches
-			.get_one::<String>("archive")
-			.map(String::as_str)
-			.unwrap_or("out.omar")
-			.to_string();
-		let paklist = sub_matches
-			.get_one::<String>("paklist")
-			.map(String::as_str)
-			.unwrap_or("")
-			.to_string();
-		let dry_run = sub_matches.get_flag("dry-run");
-
+	if let Some(Commands::Build {
+		content_directory,
+		data_directory,
+		temp_directory,
+		archive,
+		paklist,
+		dry_run,
+	}) = cli.command
+	{
 		println!("content_directory: {:?}", content_directory);
 		println!("data_directory   : {:?}", data_directory);
 		println!("temp_directory   : {:?}", temp_directory);
