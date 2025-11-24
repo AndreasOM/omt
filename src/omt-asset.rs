@@ -16,18 +16,47 @@ struct Cli {
 #[derive(Debug, Subcommand)]
 enum Commands {
 	Build {
-		#[arg(long, value_name = "CONTENT-DIRECTORY", help = "Set the content directory", default_value = ".")]
+		#[arg(
+			long,
+			value_name = "CONTENT-DIRECTORY",
+			help = "Set the content directory",
+			default_value = "."
+		)]
 		content_directory: String,
-		#[arg(long, value_name = "DATA-DIRECTORY", help = "Set the data directory", default_value = ".")]
-		data_directory: String,
-		#[arg(long, value_name = "TEMP-DIRECTORY", help = "Set the temp directory", default_value = ".")]
-		temp_directory: String,
-		#[arg(long, value_name = "archive", help = "Set the archive filename", default_value = "out.omar")]
-		archive: String,
-		#[arg(long, value_name = "PAKLIST", help = "Set the pakelist name", default_value = "")]
-		paklist: String,
-		#[arg(long, value_name = "dry-run", help = "Enable dry run to show commands without actually running them")]
-		dry_run: bool,
+		#[arg(
+			long,
+			value_name = "DATA-DIRECTORY",
+			help = "Set the data directory",
+			default_value = "."
+		)]
+		data_directory:    String,
+		#[arg(
+			long,
+			value_name = "TEMP-DIRECTORY",
+			help = "Set the temp directory",
+			default_value = "."
+		)]
+		temp_directory:    String,
+		#[arg(
+			long,
+			value_name = "archive",
+			help = "Set the archive filename",
+			default_value = "out.omar"
+		)]
+		archive:           String,
+		#[arg(
+			long,
+			value_name = "PAKLIST",
+			help = "Set the pakelist name",
+			default_value = ""
+		)]
+		paklist:           String,
+		#[arg(
+			long,
+			value_name = "dry-run",
+			help = "Enable dry run to show commands without actually running them"
+		)]
+		dry_run:           bool,
 	},
 }
 

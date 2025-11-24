@@ -17,23 +17,58 @@ struct Cli {
 #[derive(Debug, Subcommand)]
 enum Commands {
 	Create {
-		#[arg(long, value_name = "OUTPUT", help = "Set the output", default_value = "output-font")]
+		#[arg(
+			long,
+			value_name = "OUTPUT",
+			help = "Set the output",
+			default_value = "output-font"
+		)]
 		output: String,
-		#[arg(long, value_name = "SIZE", help = "Set the font size", default_value_t = 16)]
+		#[arg(
+			long,
+			value_name = "SIZE",
+			help = "Set the font size",
+			default_value_t = 16
+		)]
 		size: u32,
-		#[arg(long, value_name = "TEXSIZE", help = "Set the texture size", default_value_t = 1024)]
+		#[arg(
+			long,
+			value_name = "TEXSIZE",
+			help = "Set the texture size",
+			default_value_t = 1024
+		)]
 		texsize: u32,
-		#[arg(long, value_name = "BORDER", help = "Set the border size", default_value_t = 0)]
+		#[arg(
+			long,
+			value_name = "BORDER",
+			help = "Set the border size",
+			default_value_t = 0
+		)]
 		border: u32,
-		#[arg(long, value_name = "DISTANCEFIELD-SCALE", help = "Set/enable the distancefield scale", default_value_t = 4)]
+		#[arg(
+			long,
+			value_name = "DISTANCEFIELD-SCALE",
+			help = "Set/enable the distancefield scale",
+			default_value_t = 4
+		)]
 		distancefield_scale: u16,
-		#[arg(long, value_name = "DISTANCEFIELD-MAX-DISTANCE", help = "Set the distancefield maximum distance", default_value_t = 2)]
+		#[arg(
+			long,
+			value_name = "DISTANCEFIELD-MAX-DISTANCE",
+			help = "Set the distancefield maximum distance",
+			default_value_t = 2
+		)]
 		distancefield_max_distance: u16,
 		#[arg(long, value_name = "INPUT", help = "Set the input font(s) (only .ttf supported)", num_args = 1.., required = true)]
 		input: Vec<String>,
 	},
 	Preview {
-		#[arg(long, value_name = "INPUT", help = "Set the input", default_value = "output-font")]
+		#[arg(
+			long,
+			value_name = "INPUT",
+			help = "Set the input",
+			default_value = "output-font"
+		)]
 		input: String,
 	},
 }

@@ -16,14 +16,34 @@ struct Cli {
 #[derive(Debug, Subcommand)]
 enum Commands {
 	Build {
-		#[arg(long, value_name = "OUTPUT", help = "Set the output", default_value = "test.sbk")]
-		output: String,
-		#[arg(long, value_name = "INPUT", help = "Set the input", default_value = "test.soundbank")]
-		input: String,
-		#[arg(long, value_name = "OUTPUT-HEADER", help = "Set the output header", default_value = "")]
+		#[arg(
+			long,
+			value_name = "OUTPUT",
+			help = "Set the output",
+			default_value = "test.sbk"
+		)]
+		output:        String,
+		#[arg(
+			long,
+			value_name = "INPUT",
+			help = "Set the input",
+			default_value = "test.soundbank"
+		)]
+		input:         String,
+		#[arg(
+			long,
+			value_name = "OUTPUT-HEADER",
+			help = "Set the output header",
+			default_value = ""
+		)]
 		output_header: String,
-		#[arg(long, value_name = "USE-VERSION", help = "Set the version to use", default_value_t = 2)]
-		use_version: u8,
+		#[arg(
+			long,
+			value_name = "USE-VERSION",
+			help = "Set the version to use",
+			default_value_t = 2
+		)]
+		use_version:   u8,
 	},
 	Info {
 		#[arg(long, value_name = "INPUT", help = "Set the input")]

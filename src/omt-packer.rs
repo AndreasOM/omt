@@ -19,29 +19,71 @@ struct Cli {
 #[derive(Debug, Subcommand)]
 enum Commands {
 	Pack {
-		#[arg(long, value_name = "BASEPATH", required = true, help = "Set the base path (for relative names)")]
+		#[arg(
+			long,
+			value_name = "BASEPATH",
+			required = true,
+			help = "Set the base path (for relative names)"
+		)]
 		basepath: String,
-		#[arg(long, value_name = "OUTPUT", required = true, help = "Set the output filename")]
-		output: String,
-		#[arg(long, value_name = "PAKLIST", required = true, help = "Set the pakelist name")]
-		paklist: String,
-		#[arg(long, value_name = "NAME_MAP", help = "Set the (optional) name map file")]
+		#[arg(
+			long,
+			value_name = "OUTPUT",
+			required = true,
+			help = "Set the output filename"
+		)]
+		output:   String,
+		#[arg(
+			long,
+			value_name = "PAKLIST",
+			required = true,
+			help = "Set the pakelist name"
+		)]
+		paklist:  String,
+		#[arg(
+			long,
+			value_name = "NAME_MAP",
+			help = "Set the (optional) name map file"
+		)]
 		name_map: Option<String>,
 	},
 	Unpack {
-		#[arg(long, value_name = "TARGETPATH", required = true, help = "Set the target path (for relative names)")]
+		#[arg(
+			long,
+			value_name = "TARGETPATH",
+			required = true,
+			help = "Set the target path (for relative names)"
+		)]
 		targetpath: String,
-		#[arg(long, value_name = "INPUT", required = true, help = "Set the input filename")]
-		input: String,
-		#[arg(long, value_name = "NAME_MAP", help = "Set the (optional) name map file")]
-		name_map: Option<String>,
+		#[arg(
+			long,
+			value_name = "INPUT",
+			required = true,
+			help = "Set the input filename"
+		)]
+		input:      String,
+		#[arg(
+			long,
+			value_name = "NAME_MAP",
+			help = "Set the (optional) name map file"
+		)]
+		name_map:   Option<String>,
 		#[arg(long, help = "Use names for file instead of symlinking")]
 		names_only: bool,
 	},
 	List {
-		#[arg(long, value_name = "INPUT", required = true, help = "Set the input filename")]
-		input: String,
-		#[arg(long, value_name = "NAME_MAP", help = "Set the (optional) name map file")]
+		#[arg(
+			long,
+			value_name = "INPUT",
+			required = true,
+			help = "Set the input filename"
+		)]
+		input:    String,
+		#[arg(
+			long,
+			value_name = "NAME_MAP",
+			help = "Set the (optional) name map file"
+		)]
 		name_map: Option<String>,
 	},
 }
