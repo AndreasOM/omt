@@ -8,8 +8,8 @@ use std::process::Command;
 
 use glob::glob;
 use regex::Regex;
-use yaml_rust::Yaml;
-use yaml_rust::YamlLoader;
+use yaml_rust2::Yaml;
+use yaml_rust2::YamlLoader;
 
 #[derive(Clone, Hash, Eq, PartialEq, Debug)]
 enum ParameterValue {
