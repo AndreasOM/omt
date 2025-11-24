@@ -1,6 +1,6 @@
 [package]
 name = "omt"
-version = "0.10.0-alpha"
+version = "0.11.0-dev"
 authors = ["Andreas Neukoetter <andreas@omni-mad.com>"]
 edition = "2021"
 
