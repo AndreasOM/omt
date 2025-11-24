@@ -1,4 +1,5 @@
 use std::fs::File;
+use std::io::BufReader;
 
 use resize::{Pixel, Type};
 use rgb::FromSlice;
@@ -20,7 +21,7 @@ impl Xcassets {
 		};
 
 		// load the source // :TODO: handle errors better
-		let decoder = png::Decoder::new(File::open(&input).unwrap());
+		let decoder = png::Decoder::new(BufReader::new(File::open(&input).unwrap()));
 		//	    let (info, mut reader) = decoder.read_info().unwrap();
 		let mut reader = decoder.read_info().unwrap();
 
@@ -30,7 +31,7 @@ impl Xcassets {
 		let height = info.height;
 
 		//	    let mut src = vec![0; info.buffer_size()];
-		let mut src = vec![0; reader.output_buffer_size()];
+		let mut src = vec![0; reader.output_buffer_size().unwrap()];
 		reader.next_frame(&mut src).unwrap();
 
 		let src = src;
