@@ -44,7 +44,7 @@ impl AtlasPreviewer {
 				panic!("{}", e);
 			});
 
-			window.limit_update_rate(Some(std::time::Duration::from_micros(16600)));
+			window.set_target_fps(60);
 
 			grid_draw_buffer.fill_with_grid(64, 0xffffffff, 0x00000000);
 
