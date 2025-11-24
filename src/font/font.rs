@@ -1,10 +1,10 @@
 use std::fs::File;
 use std::io::{BufReader, Read, Write};
 
+use ab_glyph::{point, Font as AbFont, FontRef, PxScale, ScaleFont};
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use image::{DynamicImage, GenericImage, GenericImageView, ImageFormat};
 use om_fork_distance_field::DistanceFieldExt;
-use rusttype::{point, Font as RTFont, Scale};
 
 use crate::atlas::AtlasFitter;
 
@@ -289,7 +289,7 @@ impl Font {
 
 	fn blit_glyphs(
 		&mut self,
-		font: rusttype::Font,
+		font: FontRef,
 		distancefield_scale: u16,
 		distancefield_max_distance: u16,
 	) -> bool {
@@ -299,67 +299,66 @@ impl Font {
 			f => f as u32,
 		};
 
-		let scale = Scale::uniform((self.size * scale_factor) as f32);
+		let scale = PxScale::from((self.size * scale_factor) as f32);
 		let start = point(0.0, 0.0 /*+ v_metrics.ascent*/);
 
 		let glyphs = self.glyphs.clone(); // needed to avoid borrow problem below :(
 		for g in glyphs {
-			let ch = format!("{}", g.codepoint as char);
+			let ch = g.codepoint as char;
 			//			println!("Blitting {:?}", ch );
-			let layout = font.layout(&ch, scale, start);
-			for pg in layout {
-				match pg.pixel_bounding_box() {
-					None => {},
-					Some(bb) => {
-						let w = bb.width() as u32 + 2 * self.border * scale_factor;
-						let h = bb.height() as u32 + 2 * self.border * scale_factor;
-						let mut glyph_image = image::DynamicImage::new_rgba8(w, h);
-						pg.draw(|x, y, v| {
-							let v = (v * 255.0) as u8;
-							let pixel = image::Rgba([v, v, v, v]);
-							glyph_image.put_pixel(
-								x + self.border * scale_factor,
-								y + self.border * scale_factor,
-								pixel,
-							);
-						});
+			let glyph_id = font.glyph_id(ch);
+			let glyph = glyph_id.with_scale_and_position(scale, start);
 
-						//
-						if distancefield_scale >= 1 {
-							// downscale
-							let downscale_factor = 1.0 / distancefield_scale as f32;
-							let w = (w as f32 * downscale_factor) as u32;
-							let h = (h as f32 * downscale_factor) as u32;
-							let max_distance =
-								distancefield_max_distance as u32 * scale_factor as u32;
+			if let Some(outlined) = font.outline_glyph(glyph) {
+				let bounds = outlined.px_bounds();
+				let bb_width = (bounds.max.x - bounds.min.x) as u32;
+				let bb_height = (bounds.max.y - bounds.min.y) as u32;
+				let w = bb_width + 2 * self.border * scale_factor;
+				let h = bb_height + 2 * self.border * scale_factor;
+				let mut glyph_image = image::DynamicImage::new_rgba8(w, h);
 
-							let distance_field = glyph_image.grayscale().distance_field(
-								om_fork_distance_field::Options {
-									size: (w as usize, h as usize),
-									max_distance: max_distance as usize,
-									..Default::default()
-								},
-							);
-							glyph_image = image::DynamicImage::new_rgba8(w, h);
-							for y in 0..h {
-								for x in 0..w {
-									let pixel = distance_field.get_pixel(x, y);
-									let luma = pixel[0];
-									let r = luma;
-									let g = luma;
-									let b = luma;
-									let a = luma;
+				outlined.draw(|x, y, v| {
+					let v = (v * 255.0) as u8;
+					let pixel = image::Rgba([v, v, v, v]);
+					glyph_image.put_pixel(
+						x + self.border * scale_factor,
+						y + self.border * scale_factor,
+						pixel,
+					);
+				});
 
-									let rgba = image::Rgba([r, g, b, a]);
-									glyph_image.put_pixel(x, y, rgba);
-								}
-							}
+				//
+				if distancefield_scale >= 1 {
+					// downscale
+					let downscale_factor = 1.0 / distancefield_scale as f32;
+					let w = (w as f32 * downscale_factor) as u32;
+					let h = (h as f32 * downscale_factor) as u32;
+					let max_distance = distancefield_max_distance as u32 * scale_factor as u32;
+
+					let distance_field =
+						glyph_image
+							.grayscale()
+							.distance_field(om_fork_distance_field::Options {
+								size: (w as usize, h as usize),
+								max_distance: max_distance as usize,
+								..Default::default()
+							});
+					glyph_image = image::DynamicImage::new_rgba8(w, h);
+					for y in 0..h {
+						for x in 0..w {
+							let pixel = distance_field.get_pixel(x, y);
+							let luma = pixel[0];
+							let r = luma;
+							let g = luma;
+							let b = luma;
+							let a = luma;
+
+							let rgba = image::Rgba([r, g, b, a]);
+							glyph_image.put_pixel(x, y, rgba);
 						}
-						self.blit_image(g.x, g.y, &glyph_image);
-
-						break;
-					},
+					}
 				}
+				self.blit_image(g.x, g.y, &glyph_image);
 			}
 		}
 
@@ -505,8 +504,8 @@ impl Font {
 		// read the whole file
 		f.read_to_end(&mut buffer).unwrap(); //_or_else( anyhow::bail!( "Error reading font file");
 
-		let font = RTFont::try_from_bytes(&buffer[..] as &[u8]).unwrap_or_else(|| {
-			panic!("error constructing a Font from bytes");
+		let font = FontRef::try_from_slice(&buffer[..]).unwrap_or_else(|e| {
+			panic!("error constructing a Font from bytes: {}", e);
 		});
 		/*
 		let collection = FontCollection::from_bytes(&buffer[..] as &[u8]).unwrap_or_else(|e| {
@@ -519,7 +518,7 @@ impl Font {
 				panic!("error turning FontCollection into a Font: {}", e);
 			});
 		*/
-		let scale = Scale::uniform(size as f32); // :TODO: rusttype's understanding of size is different to our's!
+		let scale = PxScale::from(size as f32); // :TODO: rusttype's understanding of size is different to our's!
 		let start = point(0.0, 0.0 /*+ v_metrics.ascent*/);
 
 		let mut the_font = Font::new(texsize, size, border);
@@ -533,43 +532,35 @@ impl Font {
 			//			println!("{:?} -> {:#?}", c, data );
 
 			// :HACK: :TODO: rasterize after positioning into final image
-			let ch = format!("{}#", codepoint as char);
-			//			println!("ch: >{:?}<", ch );
-			let layout = font.layout(&ch, scale, start);
-			let mut maybe_glyph: Option<Glyph> = None;
-			for pg in layout {
-				let pos = pg.position();
-				match pg.pixel_bounding_box() {
-					None => {
-						let glyph = Glyph::new(codepoint, 0, 0);
-						the_font.add_glyph(glyph);
-					},
-					Some(bb) => {
-						//						println!("bb {:?}", bb );
-						match maybe_glyph {
-							None => {
-								//								println!("{} -> {:?}", ch, bb );
-								let h = bb.height() as u32 + 2 * border;
-								let w = bb.width() as u32 + 2 * border;
-								let mut glyph = Glyph::new(codepoint, w, h);
-								let y_offset = bb.max.y as f32;
-								//								println!("\t{} -> {}", ch, y_offset );
-								glyph.y_offset = y_offset / texsize as f32;
-								maybe_glyph = Some(glyph);
-							},
-							Some(mut glyph) => {
-								// second character!
-								//								println!("{} -> {:?}", ch, bb );
-								//								println!("Pos {:?}", pos.x );
-								// :TODO: use advance_width
-								glyph.advance = pos.x as u16;
-								//								let y_offset = 0.5 * glyph.height as f32;
-								the_font.add_glyph(glyph);
-								break;
-							},
-						}
-					},
-				}
+			let ch = codepoint as char;
+			let glyph_id = font.glyph_id(ch);
+			let next_glyph_id = font.glyph_id('#'); // Using '#' to match original two-character approach
+
+			// Get scaled font for metrics
+			let scaled_font = font.as_scaled(scale);
+			let advance = scaled_font.h_advance(glyph_id);
+			let kern = scaled_font.kern(glyph_id, next_glyph_id);
+			let total_advance = advance + kern;
+
+			// Get the glyph with scale and position for rendering
+			let glyph = glyph_id.with_scale_and_position(scale, start);
+
+			if let Some(outlined) = font.outline_glyph(glyph) {
+				let bounds = outlined.px_bounds();
+				let bb_width = (bounds.max.x - bounds.min.x) as u32;
+				let bb_height = (bounds.max.y - bounds.min.y) as u32;
+				let h = bb_height + 2 * border;
+				let w = bb_width + 2 * border;
+				let mut glyph = Glyph::new(codepoint, w, h);
+				let y_offset = bounds.max.y;
+				glyph.y_offset = y_offset / texsize as f32;
+				glyph.advance = total_advance as u16;
+				the_font.add_glyph(glyph);
+			} else {
+				// No outline (e.g., space character)
+				let mut glyph = Glyph::new(codepoint, 0, 0);
+				glyph.advance = total_advance as u16;
+				the_font.add_glyph(glyph);
 			}
 		}
 		println!("CNT {:?}", cnt);
