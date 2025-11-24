@@ -80,6 +80,6 @@ rgb = "0.8.32"
 
 # shader-crusher = { git = "https://github.com/AndreasOM/shader-crusher" }
 shader-crusher = "0.5.0-alpha"
-anyhow = "1.0.62"
+anyhow = "1.0"
 symlink = "0.1.0"
 
