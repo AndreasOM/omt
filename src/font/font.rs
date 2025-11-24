@@ -2,7 +2,7 @@ use std::fs::File;
 use std::io::{BufReader, Read, Write};
 
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
-use distance_field::DistanceFieldExt;
+use om_fork_distance_field::DistanceFieldExt;
 use image::{DynamicImage, GenericImage, GenericImageView, ImageFormat};
 use rusttype::{point, Font as RTFont, Scale};
 
@@ -336,7 +336,7 @@ impl Font {
 							let distance_field =
 								glyph_image
 									.grayscale()
-									.distance_field(distance_field::Options {
+									.distance_field(om_fork_distance_field::Options {
 										size: (w as usize, h as usize),
 										max_distance: max_distance as usize,
 										..Default::default()
