@@ -60,7 +60,7 @@ name = "omt-xcassets"
 path = "src/omt-xcassets.rs"
 
 [dependencies]
-byteorder = "1.4.3"
+byteorder = "1.5"
 # clap = { version = "3.2.17", features = ["derive", "cargo", "env", "regex", "unicode", "wrap_help", "deprecated"] }
 clap = { version = "4", features = ["derive", "cargo", "env", "unicode", "wrap_help"] }
 crc = "3.3"
