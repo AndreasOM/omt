@@ -1,7 +1,6 @@
 use std::fs;
 
-use rlua::Lua;
-use rlua::RluaCompat;
+use mlua::Lua;
 
 pub struct Script {}
 
@@ -14,10 +13,10 @@ impl Script {
 
 		let lua = Lua::new();
 
-		let r = lua.context(|lua_ctx| match lua_ctx.load(&data).into_function() {
+		let r = match lua.load(&data).into_function() {
 			Ok(_) => Ok(0),
 			Err(e) => Err(e),
-		});
+		};
 
 		//		println!( "{:?}", r );
 
