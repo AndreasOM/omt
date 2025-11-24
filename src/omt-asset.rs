@@ -65,40 +65,44 @@ fn main() {
 
 	let cli = Cli::parse();
 
-	if let Some(Commands::Build {
-		content_directory,
-		data_directory,
-		temp_directory,
-		archive,
-		paklist,
-		dry_run,
-	}) = cli.command
-	{
-		println!("content_directory: {:?}", content_directory);
-		println!("data_directory   : {:?}", data_directory);
-		println!("temp_directory   : {:?}", temp_directory);
-		println!("archive          : {:?}", archive);
-		println!("paklist          : {:?}", paklist);
-		println!("dry_run          : {:?}", dry_run);
+	match cli.command {
+		Some(Commands::Build {
+			content_directory,
+			data_directory,
+			temp_directory,
+			archive,
+			paklist,
+			dry_run,
+		}) => {
+			println!("content_directory: {:?}", content_directory);
+			println!("data_directory   : {:?}", data_directory);
+			println!("temp_directory   : {:?}", temp_directory);
+			println!("archive          : {:?}", archive);
+			println!("paklist          : {:?}", paklist);
+			println!("dry_run          : {:?}", dry_run);
 
-		let asset_builder = AssetBuilder::new(
-			&content_directory,
-			&data_directory,
-			&temp_directory,
-			&archive,
-			&paklist,
-			&dry_run,
-		);
+			let asset_builder = AssetBuilder::new(
+				&content_directory,
+				&data_directory,
+				&temp_directory,
+				&archive,
+				&paklist,
+				&dry_run,
+			);
 
-		match AssetBuilder::build(&asset_builder) {
-			Ok(number_of_files) => {
-				println!("📁 ✅ ~{:?} assets build", number_of_files);
-				process::exit(0);
-			},
-			Err(e) => {
-				println!("📁 ‼️ Error {:?}", e);
-				process::exit(-1);
-			},
-		}
+			match AssetBuilder::build(&asset_builder) {
+				Ok(number_of_files) => {
+					println!("📁 ✅ ~{:?} assets build", number_of_files);
+					process::exit(0);
+				},
+				Err(e) => {
+					println!("📁 ‼️ Error {:?}", e);
+					process::exit(-1);
+				},
+			}
+		},
+		None => {
+			process::exit(-1);
+		},
 	}
 }

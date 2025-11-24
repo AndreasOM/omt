@@ -43,25 +43,29 @@ enum Commands {
 fn main() {
 	let cli = Cli::parse();
 
-	if let Some(Commands::Generate {
-		input,
-		output,
-		mode,
-	}) = cli.command
-	{
-		println!("mode    : {:?}", mode);
-		println!("output  : {:?}", output);
-		println!("input   : {:?}", input);
+	match cli.command {
+		Some(Commands::Generate {
+			input,
+			output,
+			mode,
+		}) => {
+			println!("mode    : {:?}", mode);
+			println!("output  : {:?}", output);
+			println!("input   : {:?}", input);
 
-		match Xcassets::generate(&input, &mode, &output) {
-			Ok(number_of_files) => {
-				println!("{:?} sub-assets generated", number_of_files);
-				process::exit(0);
-			},
-			Err(e) => {
-				println!("Error {:?}", e);
-				process::exit(-1);
-			},
-		}
+			match Xcassets::generate(&input, &mode, &output) {
+				Ok(number_of_files) => {
+					println!("{:?} sub-assets generated", number_of_files);
+					process::exit(0);
+				},
+				Err(e) => {
+					println!("Error {:?}", e);
+					process::exit(-1);
+				},
+			}
+		},
+		None => {
+			process::exit(-1);
+		},
 	}
 }
