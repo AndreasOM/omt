@@ -65,12 +65,12 @@ byteorder = "1.5"
 clap = { version = "4", features = ["derive", "cargo", "env", "unicode", "wrap_help"] }
 crc = "3.3"
 glob = "~0.3.0"
-image = "0.25"
+image = { version = "0.25", default-features = false, features = ["png"] }
 minifb = "0.28.0"
 regex = "1.12"
 yaml-rust2 = "0.9"
 ab_glyph = "0.2.32"
-om-fork-distance-field = "0.2.2"
+om-fork-distance-field = "0.3.0-alpha"
 mlua = { version = "0.11", features = ["lua54", "vendored"] }
 serde = { version = "~1.0", features = ["derive"] }
 serde_json = "~1.0"
