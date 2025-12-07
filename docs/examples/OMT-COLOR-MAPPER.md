@@ -21,9 +21,9 @@ Command:
 omt-color-mapper map --source-pal pal-bronze.png --target-pal pal-silver.png --input fiiish-bronze.png --output fiiish-silver.png
 ```
 
-| Source | Palette | Result |
-|--------|---------|--------|
-| ![Bronze Fish](fiiish-bronze.png) | ![Silver Palette](pal-silver.png) | ![Silver Fish](fiiish-silver.png) |
+| Source | Palettes | Result |
+|--------|----------|--------|
+| ![Bronze Fish](fiiish-bronze.png) | ![Bronze Palette](pal-bronze.png)<br>![Silver Palette](pal-silver.png) | ![Silver Fish](fiiish-silver.png) |
 
 ### Gold Variant
 
@@ -32,9 +32,9 @@ Command:
 omt-color-mapper map --source-pal pal-bronze.png --target-pal pal-gold.png --input fiiish-bronze.png --output fiiish-gold.png
 ```
 
-| Source | Palette | Result |
-|--------|---------|--------|
-| ![Bronze Fish](fiiish-bronze.png) | ![Gold Palette](pal-gold.png) | ![Gold Fish](fiiish-gold.png) |
+| Source | Palettes | Result |
+|--------|----------|--------|
+| ![Bronze Fish](fiiish-bronze.png) | ![Bronze Palette](pal-bronze.png)<br>![Gold Palette](pal-gold.png) | ![Gold Fish](fiiish-gold.png) |
 
 ### Diamond Variant
 
@@ -43,9 +43,9 @@ Command:
 omt-color-mapper map --source-pal pal-bronze.png --target-pal pal-diamond.png --input fiiish-bronze.png --output fiiish-diamond.png
 ```
 
-| Source | Palette | Result |
-|--------|---------|--------|
-| ![Bronze Fish](fiiish-bronze.png) | ![Diamond Palette](pal-diamond.png) | ![Diamond Fish](fiiish-diamond.png) |
+| Source | Palettes | Result |
+|--------|----------|--------|
+| ![Bronze Fish](fiiish-bronze.png) | ![Bronze Palette](pal-bronze.png)<br>![Diamond Palette](pal-diamond.png) | ![Diamond Fish](fiiish-diamond.png) |
 
 ### Ruby Variant
 
@@ -54,9 +54,9 @@ Command:
 omt-color-mapper map --source-pal pal-bronze.png --target-pal pal-ruby.png --input fiiish-bronze.png --output fiiish-ruby.png
 ```
 
-| Source | Palette | Result |
-|--------|---------|--------|
-| ![Bronze Fish](fiiish-bronze.png) | ![Ruby Palette](pal-ruby.png) | ![Ruby Fish](fiiish-ruby.png) |
+| Source | Palettes | Result |
+|--------|----------|--------|
+| ![Bronze Fish](fiiish-bronze.png) | ![Bronze Palette](pal-bronze.png)<br>![Ruby Palette](pal-ruby.png) | ![Ruby Fish](fiiish-ruby.png) |
 
 ## Batch Generation
 
