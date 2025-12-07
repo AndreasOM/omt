@@ -6,57 +6,57 @@ The `omt-color-mapper` tool maps colors from one palette to another while preser
 
 This example demonstrates how to create different color variants of a character sprite by mapping from a source palette to various target palettes.
 
-### Source Image
+### Available Palettes
 
-![Bronze Fish](fiiish-bronze.png)
+| Bronze (Source) | Silver | Gold | Diamond | Ruby |
+|-----------------|--------|------|---------|------|
+| ![Bronze Palette](pal-bronze.png) | ![Silver Palette](pal-silver.png) | ![Gold Palette](pal-gold.png) | ![Diamond Palette](pal-diamond.png) | ![Ruby Palette](pal-ruby.png) |
 
-**fiiish-bronze.png** - Original character using the bronze palette
+## Color Mapping Examples
 
-### Palettes
+### Silver Variant
 
-![Bronze Palette](pal-bronze.png) **pal-bronze.png** - Source palette (bronze)
-
-![Silver Palette](pal-silver.png) **pal-silver.png** - Target palette (silver)
-
-![Gold Palette](pal-gold.png) **pal-gold.png** - Target palette (gold)
-
-![Diamond Palette](pal-diamond.png) **pal-diamond.png** - Target palette (diamond)
-
-![Ruby Palette](pal-ruby.png) **pal-ruby.png** - Target palette (ruby)
-
-## Commands
-
-### Generate Silver Variant
-
+Command:
 ```bash
 omt-color-mapper map --source-pal pal-bronze.png --target-pal pal-silver.png --input fiiish-bronze.png --output fiiish-silver.png
 ```
 
-![Silver Fish](fiiish-silver.png)
+| Source | Palette | Result |
+|--------|---------|--------|
+| ![Bronze Fish](fiiish-bronze.png) | ![Silver Palette](pal-silver.png) | ![Silver Fish](fiiish-silver.png) |
 
-### Generate Gold Variant
+### Gold Variant
 
+Command:
 ```bash
 omt-color-mapper map --source-pal pal-bronze.png --target-pal pal-gold.png --input fiiish-bronze.png --output fiiish-gold.png
 ```
 
-![Gold Fish](fiiish-gold.png)
+| Source | Palette | Result |
+|--------|---------|--------|
+| ![Bronze Fish](fiiish-bronze.png) | ![Gold Palette](pal-gold.png) | ![Gold Fish](fiiish-gold.png) |
 
-### Generate Diamond Variant
+### Diamond Variant
 
+Command:
 ```bash
 omt-color-mapper map --source-pal pal-bronze.png --target-pal pal-diamond.png --input fiiish-bronze.png --output fiiish-diamond.png
 ```
 
-![Diamond Fish](fiiish-diamond.png)
+| Source | Palette | Result |
+|--------|---------|--------|
+| ![Bronze Fish](fiiish-bronze.png) | ![Diamond Palette](pal-diamond.png) | ![Diamond Fish](fiiish-diamond.png) |
 
-### Generate Ruby Variant
+### Ruby Variant
 
+Command:
 ```bash
 omt-color-mapper map --source-pal pal-bronze.png --target-pal pal-ruby.png --input fiiish-bronze.png --output fiiish-ruby.png
 ```
 
-![Ruby Fish](fiiish-ruby.png)
+| Source | Palette | Result |
+|--------|---------|--------|
+| ![Bronze Fish](fiiish-bronze.png) | ![Ruby Palette](pal-ruby.png) | ![Ruby Fish](fiiish-ruby.png) |
 
 ## Batch Generation
 
