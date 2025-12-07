@@ -213,87 +213,79 @@ impl ColorMapper {
 		let pixel_count = (width * height) as usize;
 		let mut output_raw = vec![0u8; pixel_count * 4];
 
-		// Process each pixel
-		println!("Processing {}x{} pixels...", width, height);
-		for y in 0..height {
-			// Progress indicator every 100 lines
-			if y % 100 == 0 {
-				eprint!("\r  Line {}/{}...", y, height);
-			}
+		// Process each pixel in parallel
+		println!("Processing {}x{} pixels in parallel...", width, height);
+		output_raw.par_chunks_mut(4).enumerate().for_each(|(pixel_idx, output_pixel)| {
+			let byte_idx = pixel_idx * 4;
 
-			for x in 0..width {
-				let pixel_idx = (y * width + x) as usize;
-				let byte_idx = pixel_idx * 4;
+			// Read from input buffer (u8 RGB values)
+			let r = input_raw[byte_idx];
+			let g = input_raw[byte_idx + 1];
+			let b = input_raw[byte_idx + 2];
+			let alpha = input_raw[byte_idx + 3];
 
-				// Read from input buffer (u8 RGB values)
-				let r = input_raw[byte_idx];
-				let g = input_raw[byte_idx + 1];
-				let b = input_raw[byte_idx + 2];
-				let alpha = input_raw[byte_idx + 3];
+			// O(1) lookup to find palette position
+			let palette_pos = source_lut.lookup(r, g, b);
 
-				// O(1) lookup to find palette position
-				let palette_pos = source_lut.lookup(r, g, b);
+			// Convert input pixel to OKLab for delta calculation
+			let input_rgb = [r as f32 / 255.0, g as f32 / 255.0, b as f32 / 255.0];
+			let input_oklab = rgb_to_oklab(input_rgb);
 
-				// Convert input pixel to OKLab for delta calculation
-				let input_rgb = [r as f32 / 255.0, g as f32 / 255.0, b as f32 / 255.0];
-				let input_oklab = rgb_to_oklab(input_rgb);
+			// Get source palette color at matched position
+			let source_match = source_lut.source_oklab_by_position[palette_pos];
 
-				// Get source palette color at matched position
-				let source_match = source_lut.source_oklab_by_position[palette_pos];
+			// Calculate delta in OKLab space
+			let delta = [
+				input_oklab[0] - source_match[0],
+				input_oklab[1] - source_match[1],
+				input_oklab[2] - source_match[2],
+			];
 
-				// Calculate delta in OKLab space
-				let delta = [
-					input_oklab[0] - source_match[0],
-					input_oklab[1] - source_match[1],
-					input_oklab[2] - source_match[2],
-				];
+			// Get corresponding color from target palette at same position
+			let target_base = target_palette.oklab_colors[palette_pos];
 
-				// Get corresponding color from target palette at same position
-				let target_base = target_palette.oklab_colors[palette_pos];
+			// Apply delta to target color with gamut scaling
+			let mut output_oklab = [
+				target_base[0] + delta[0],
+				target_base[1] + delta[1],
+				target_base[2] + delta[2],
+			];
 
-				// Apply delta to target color with gamut scaling
-				let mut output_oklab = [
-					target_base[0] + delta[0],
-					target_base[1] + delta[1],
-					target_base[2] + delta[2],
-				];
+			// Try to scale delta if out of gamut
+			let mut scale = 1.0;
+			loop {
+				let test_linear_rgb = oklab_to_linear_rgb_unclamped(output_oklab);
 
-				// Try to scale delta if out of gamut
-				let mut scale = 1.0;
-				loop {
-					let test_linear_rgb = oklab_to_linear_rgb_unclamped(output_oklab);
+				// Check if in gamut (linear RGB in [0,1])
+				let is_valid = test_linear_rgb[0] >= 0.0
+					&& test_linear_rgb[0] <= 1.0 && test_linear_rgb[1] >= 0.0
+					&& test_linear_rgb[1] <= 1.0 && test_linear_rgb[2] >= 0.0
+					&& test_linear_rgb[2] <= 1.0;
 
-					// Check if in gamut (linear RGB in [0,1])
-					let is_valid = test_linear_rgb[0] >= 0.0
-						&& test_linear_rgb[0] <= 1.0 && test_linear_rgb[1] >= 0.0
-						&& test_linear_rgb[1] <= 1.0 && test_linear_rgb[2] >= 0.0
-						&& test_linear_rgb[2] <= 1.0;
-
-					if is_valid || scale <= 0.1 {
-						// Either valid or we've scaled down enough
-						break;
-					}
-
-					// Scale down delta
-					scale -= 0.1;
-					output_oklab = [
-						target_base[0] + delta[0] * scale,
-						target_base[1] + delta[1] * scale,
-						target_base[2] + delta[2] * scale,
-					];
+				if is_valid || scale <= 0.1 {
+					// Either valid or we've scaled down enough
+					break;
 				}
 
-				// Convert back to RGB
-				let output_rgb = oklab_to_rgb(output_oklab);
-
-				// Write directly to output buffer
-				output_raw[byte_idx] = (output_rgb[0] * 255.0).round() as u8;
-				output_raw[byte_idx + 1] = (output_rgb[1] * 255.0).round() as u8;
-				output_raw[byte_idx + 2] = (output_rgb[2] * 255.0).round() as u8;
-				output_raw[byte_idx + 3] = alpha;
+				// Scale down delta
+				scale -= 0.1;
+				output_oklab = [
+					target_base[0] + delta[0] * scale,
+					target_base[1] + delta[1] * scale,
+					target_base[2] + delta[2] * scale,
+				];
 			}
-		}
-		eprintln!("\r  Line {}/{}... Done!", height, height);
+
+			// Convert back to RGB
+			let output_rgb = oklab_to_rgb(output_oklab);
+
+			// Write to this pixel's output chunk
+			output_pixel[0] = (output_rgb[0] * 255.0).round() as u8;
+			output_pixel[1] = (output_rgb[1] * 255.0).round() as u8;
+			output_pixel[2] = (output_rgb[2] * 255.0).round() as u8;
+			output_pixel[3] = alpha;
+		});
+		println!("  Done!");
 
 		// Convert raw buffer to RgbaImage
 		let output = RgbaImage::from_raw(width, height, output_raw)
@@ -395,75 +387,68 @@ impl ColorMapper {
 		let pixel_count = (width * height) as usize;
 		let mut output_raw = vec![0u8; pixel_count * 4];
 
-		// Process each pixel
+		// Process each pixel in parallel
 		let start_process = Instant::now();
-		println!("Processing {}x{} pixels...", width, height);
-		for y in 0..height {
-			if y % 100 == 0 {
-				eprint!("\r  Line {}/{}...", y, height);
-			}
+		println!("Processing {}x{} pixels in parallel...", width, height);
+		output_raw.par_chunks_mut(4).enumerate().for_each(|(pixel_idx, output_pixel)| {
+			let byte_idx = pixel_idx * 4;
 
-			for x in 0..width {
-				let pixel_idx = (y * width + x) as usize;
-				let byte_idx = pixel_idx * 4;
+			let r = input_raw_buf[byte_idx];
+			let g = input_raw_buf[byte_idx + 1];
+			let b = input_raw_buf[byte_idx + 2];
+			let alpha = input_raw_buf[byte_idx + 3];
 
-				let r = input_raw_buf[byte_idx];
-				let g = input_raw_buf[byte_idx + 1];
-				let b = input_raw_buf[byte_idx + 2];
-				let alpha = input_raw_buf[byte_idx + 3];
+			let palette_pos = source_lut.lookup(r, g, b);
 
-				let palette_pos = source_lut.lookup(r, g, b);
+			let input_rgb = [r as f32 / 255.0, g as f32 / 255.0, b as f32 / 255.0];
+			let input_oklab = rgb_to_oklab(input_rgb);
 
-				let input_rgb = [r as f32 / 255.0, g as f32 / 255.0, b as f32 / 255.0];
-				let input_oklab = rgb_to_oklab(input_rgb);
+			let source_match = source_lut.source_oklab_by_position[palette_pos];
 
-				let source_match = source_lut.source_oklab_by_position[palette_pos];
+			let delta = [
+				input_oklab[0] - source_match[0],
+				input_oklab[1] - source_match[1],
+				input_oklab[2] - source_match[2],
+			];
 
-				let delta = [
-					input_oklab[0] - source_match[0],
-					input_oklab[1] - source_match[1],
-					input_oklab[2] - source_match[2],
-				];
+			let target_base = target_palette.oklab_colors[palette_pos];
 
-				let target_base = target_palette.oklab_colors[palette_pos];
+			let mut output_oklab = [
+				target_base[0] + delta[0],
+				target_base[1] + delta[1],
+				target_base[2] + delta[2],
+			];
 
-				let mut output_oklab = [
-					target_base[0] + delta[0],
-					target_base[1] + delta[1],
-					target_base[2] + delta[2],
-				];
+			let mut scale = 1.0;
+			loop {
+				let test_linear_rgb = oklab_to_linear_rgb_unclamped(output_oklab);
 
-				let mut scale = 1.0;
-				loop {
-					let test_linear_rgb = oklab_to_linear_rgb_unclamped(output_oklab);
+				let is_valid = test_linear_rgb[0] >= 0.0
+					&& test_linear_rgb[0] <= 1.0 && test_linear_rgb[1] >= 0.0
+					&& test_linear_rgb[1] <= 1.0 && test_linear_rgb[2] >= 0.0
+					&& test_linear_rgb[2] <= 1.0;
 
-					let is_valid = test_linear_rgb[0] >= 0.0
-						&& test_linear_rgb[0] <= 1.0 && test_linear_rgb[1] >= 0.0
-						&& test_linear_rgb[1] <= 1.0 && test_linear_rgb[2] >= 0.0
-						&& test_linear_rgb[2] <= 1.0;
-
-					if is_valid || scale <= 0.1 {
-						break;
-					}
-
-					scale -= 0.1;
-					output_oklab = [
-						target_base[0] + delta[0] * scale,
-						target_base[1] + delta[1] * scale,
-						target_base[2] + delta[2] * scale,
-					];
+				if is_valid || scale <= 0.1 {
+					break;
 				}
 
-				let output_rgb = oklab_to_rgb(output_oklab);
-
-				output_raw[byte_idx] = (output_rgb[0] * 255.0).round() as u8;
-				output_raw[byte_idx + 1] = (output_rgb[1] * 255.0).round() as u8;
-				output_raw[byte_idx + 2] = (output_rgb[2] * 255.0).round() as u8;
-				output_raw[byte_idx + 3] = alpha;
+				scale -= 0.1;
+				output_oklab = [
+					target_base[0] + delta[0] * scale,
+					target_base[1] + delta[1] * scale,
+					target_base[2] + delta[2] * scale,
+				];
 			}
-		}
+
+			let output_rgb = oklab_to_rgb(output_oklab);
+
+			output_pixel[0] = (output_rgb[0] * 255.0).round() as u8;
+			output_pixel[1] = (output_rgb[1] * 255.0).round() as u8;
+			output_pixel[2] = (output_rgb[2] * 255.0).round() as u8;
+			output_pixel[3] = alpha;
+		});
 		let process_time = start_process.elapsed();
-		eprintln!("\r  Line {}/{}... Done!", height, height);
+		println!("  Done!");
 		println!("Processing time: {:.3}s", process_time.as_secs_f64());
 		println!();
 
