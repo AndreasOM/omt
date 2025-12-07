@@ -7,6 +7,7 @@ use image::{GenericImageView, RgbaImage};
 use kiddo::ImmutableKdTree;
 use kiddo::SquaredEuclidean;
 use rand::Rng;
+use rayon::prelude::*;
 
 use super::oklab::{oklab_to_linear_rgb_unclamped, oklab_to_rgb, rgb_to_oklab};
 
@@ -85,44 +86,40 @@ impl PaletteLUT {
 		}
 		let kdtree: ImmutableKdTree<f32, 3> = ImmutableKdTree::new_from_slice(&tree_points);
 
-		// Step 2: Build 256x256x256 lookup table
-		println!("  Building 256^3 lookup table (16.7M entries)...");
+		// Step 2: Build 256x256x256 lookup table in parallel
+		println!("  Building 256^3 lookup table (16.7M entries) in parallel...");
 		const GRID_SIZE: usize = 256 * 256 * 256;
 		let mut grid = vec![0u32; GRID_SIZE];
 
-		for r in 0..256 {
-			if r % 32 == 0 {
-				eprint!("\r    Building LUT: {}/256...", r);
-			}
+		grid.par_iter_mut().enumerate().for_each(|(grid_idx, cell)| {
+			// Decode linear index back to r, g, b
+			let r = grid_idx / (256 * 256);
+			let g = (grid_idx / 256) % 256;
+			let b = grid_idx % 256;
 
-			for g in 0..256 {
-				for b in 0..256 {
-					// Convert grid cell RGB to OKLab
-					let cell_rgb = [r as f32 / 255.0, g as f32 / 255.0, b as f32 / 255.0];
-					let cell_oklab = rgb_to_oklab(cell_rgb);
+			// Convert grid cell RGB to OKLab
+			let cell_rgb = [r as f32 / 255.0, g as f32 / 255.0, b as f32 / 255.0];
+			let cell_oklab = rgb_to_oklab(cell_rgb);
 
-					// Apply same scaling as tree
-					let query_point = if euclidean {
-						cell_oklab
-					} else {
-						[
-							cell_oklab[0] * lightness_weight,
-							cell_oklab[1],
-							cell_oklab[2],
-						]
-					};
+			// Apply same scaling as tree
+			let query_point = if euclidean {
+				cell_oklab
+			} else {
+				[
+					cell_oklab[0] * lightness_weight,
+					cell_oklab[1],
+					cell_oklab[2],
+				]
+			};
 
-					// Find closest color using KD-tree (O(log N) instead of O(N))
-					let nearest = kdtree.nearest_one::<SquaredEuclidean>(&query_point);
-					let best_index = nearest.item as usize;
+			// Find closest color using KD-tree (O(log N) instead of O(N))
+			let nearest = kdtree.nearest_one::<SquaredEuclidean>(&query_point);
+			let best_index = nearest.item as usize;
 
-					// Store palette position in grid
-					let grid_idx = r * 256 * 256 + g * 256 + b;
-					grid[grid_idx] = unique_colors[best_index].palette_position as u32;
-				}
-			}
-		}
-		eprintln!("\r    Building LUT: 256/256... Done!");
+			// Store palette position in this cell
+			*cell = unique_colors[best_index].palette_position as u32;
+		});
+		println!("  Done!");
 
 		PaletteLUT {
 			grid,
