@@ -87,6 +87,12 @@ enum Commands {
 			default_value_t = 2.0
 		)]
 		lightness_weight: f32,
+		#[arg(
+			long,
+			help = "Output results as a single line for logging",
+			default_value_t = false
+		)]
+		oneline:         bool,
 	},
 }
 
@@ -132,15 +138,18 @@ fn main() {
 			image_size,
 			euclidean,
 			lightness_weight,
+			oneline,
 		}) => {
-			println!("Running benchmark:");
-			println!("  colors          : {}", colors);
-			println!("  image_size      : {}x{}", image_size, image_size);
-			println!("  euclidean       : {}", euclidean);
-			println!("  lightness_weight: {}", lightness_weight);
-			println!();
+			if !oneline {
+				println!("Running benchmark:");
+				println!("  colors          : {}", colors);
+				println!("  image_size      : {}x{}", image_size, image_size);
+				println!("  euclidean       : {}", euclidean);
+				println!("  lightness_weight: {}", lightness_weight);
+				println!();
+			}
 
-			match ColorMapper::benchmark(colors, image_size, euclidean, lightness_weight) {
+			match ColorMapper::benchmark(colors, image_size, euclidean, lightness_weight, oneline) {
 				Ok(_) => {
 					process::exit(0);
 				},

@@ -1,9 +1,11 @@
 use std::collections::HashSet;
 use std::path::Path;
-use std::time::Instant;
+use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
 use anyhow::{bail, Result};
 use image::{GenericImageView, RgbaImage};
+use kiddo::ImmutableKdTree;
+use kiddo::SquaredEuclidean;
 use rand::Rng;
 
 use super::oklab::{oklab_to_linear_rgb_unclamped, oklab_to_rgb, rgb_to_oklab};
@@ -64,6 +66,25 @@ impl PaletteLUT {
 			source_oklab_by_position[unique_color.palette_position] = unique_color.oklab;
 		}
 
+		// Build KD-tree for fast nearest-neighbor lookup
+		println!("  Building KD-tree from {} unique colors...", unique_colors.len());
+		let mut tree_points = Vec::with_capacity(unique_colors.len());
+		for unique_color in &unique_colors {
+			let scaled_point = if euclidean {
+				// Euclidean: use original OKLab coordinates
+				unique_color.oklab
+			} else {
+				// Weighted: pre-scale L coordinate to make euclidean distance equivalent to weighted
+				[
+					unique_color.oklab[0] * lightness_weight,
+					unique_color.oklab[1],
+					unique_color.oklab[2],
+				]
+			};
+			tree_points.push(scaled_point);
+		}
+		let kdtree: ImmutableKdTree<f32, 3> = ImmutableKdTree::new_from_slice(&tree_points);
+
 		// Step 2: Build 256x256x256 lookup table
 		println!("  Building 256^3 lookup table (16.7M entries)...");
 		const GRID_SIZE: usize = 256 * 256 * 256;
@@ -80,27 +101,20 @@ impl PaletteLUT {
 					let cell_rgb = [r as f32 / 255.0, g as f32 / 255.0, b as f32 / 255.0];
 					let cell_oklab = rgb_to_oklab(cell_rgb);
 
-					// Find closest color in unique palette
-					let mut best_index = 0;
-					let mut best_distance_sq = f32::MAX;
+					// Apply same scaling as tree
+					let query_point = if euclidean {
+						cell_oklab
+					} else {
+						[
+							cell_oklab[0] * lightness_weight,
+							cell_oklab[1],
+							cell_oklab[2],
+						]
+					};
 
-					for (i, unique_color) in unique_colors.iter().enumerate() {
-						let dl = cell_oklab[0] - unique_color.oklab[0];
-						let da = cell_oklab[1] - unique_color.oklab[1];
-						let db = cell_oklab[2] - unique_color.oklab[2];
-
-						let distance_sq = if euclidean {
-							dl * dl + da * da + db * db
-						} else {
-							(lightness_weight * dl) * (lightness_weight * dl)
-								+ da * da + db * db
-						};
-
-						if distance_sq < best_distance_sq {
-							best_distance_sq = distance_sq;
-							best_index = i;
-						}
-					}
+					// Find closest color using KD-tree (O(log N) instead of O(N))
+					let nearest = kdtree.nearest_one::<SquaredEuclidean>(&query_point);
+					let best_index = nearest.item as usize;
 
 					// Store palette position in grid
 					let grid_idx = r * 256 * 256 + g * 256 + b;
@@ -301,6 +315,7 @@ impl ColorMapper {
 		image_size: u32,
 		euclidean: bool,
 		lightness_weight: f32,
+		oneline: bool,
 	) -> Result<()> {
 		let mut rng = rand::thread_rng();
 		let start_total = Instant::now();
@@ -459,14 +474,45 @@ impl ColorMapper {
 		let megapixels = (width * height) as f64 / 1_000_000.0;
 		let throughput = megapixels / process_time.as_secs_f64();
 
-		println!("=== Benchmark Results ===");
-		println!("LUT build time    : {:.3}s", lut_time.as_secs_f64());
-		println!("Target cache time : {:.3}s", target_time.as_secs_f64());
-		println!("Processing time   : {:.3}s", process_time.as_secs_f64());
-		println!("Total time        : {:.3}s", total_time.as_secs_f64());
-		println!("Image size        : {}x{} ({:.2} MP)", width, height, megapixels);
-		println!("Throughput        : {:.2} MP/s", throughput);
-		println!("Unique colors     : {}", source_lut.unique_colors.len());
+		if oneline {
+			// Format: [YYYY-MM-DD HH:MM:SS] [colors] [widthxheight] - [total_time]s [lut_time]s [processing_time]s [throughput]MP/s
+			let now = SystemTime::now();
+			let duration = now.duration_since(UNIX_EPOCH).unwrap();
+			let secs = duration.as_secs();
+
+			// Convert to date/time (simplified UTC calculation)
+			let days_since_epoch = secs / 86400;
+			let remaining_secs = secs % 86400;
+			let hours = remaining_secs / 3600;
+			let minutes = (remaining_secs % 3600) / 60;
+			let seconds = remaining_secs % 60;
+
+			// Approximate date calculation (good enough for logging)
+			let year = 1970 + (days_since_epoch / 365);
+			let day_of_year = days_since_epoch % 365;
+			let month = (day_of_year / 30) + 1;
+			let day = (day_of_year % 30) + 1;
+
+			println!(
+				"[{:04}-{:02}-{:02} {:02}:{:02}:{:02}] [{}] [{}x{}] - {:.3}s {:.3}s {:.3}s {:.2}MP/s",
+				year, month, day, hours, minutes, seconds,
+				source_lut.unique_colors.len(),
+				width, height,
+				total_time.as_secs_f64(),
+				lut_time.as_secs_f64(),
+				process_time.as_secs_f64(),
+				throughput
+			);
+		} else {
+			println!("=== Benchmark Results ===");
+			println!("LUT build time    : {:.3}s", lut_time.as_secs_f64());
+			println!("Target cache time : {:.3}s", target_time.as_secs_f64());
+			println!("Processing time   : {:.3}s", process_time.as_secs_f64());
+			println!("Total time        : {:.3}s", total_time.as_secs_f64());
+			println!("Image size        : {}x{} ({:.2} MP)", width, height, megapixels);
+			println!("Throughput        : {:.2} MP/s", throughput);
+			println!("Unique colors     : {}", source_lut.unique_colors.len());
+		}
 
 		Ok(())
 	}
