@@ -1,8 +1,10 @@
 use std::collections::HashSet;
 use std::path::Path;
+use std::time::Instant;
 
 use anyhow::{bail, Result};
 use image::{GenericImageView, RgbaImage};
+use rand::Rng;
 
 use super::oklab::{oklab_to_linear_rgb_unclamped, oklab_to_rgb, rgb_to_oklab};
 
@@ -290,6 +292,181 @@ impl ColorMapper {
 		println!("Saving output...");
 		output.save(output_path)?;
 		println!("Done!");
+
+		Ok(())
+	}
+
+	pub fn benchmark(
+		colors: usize,
+		image_size: u32,
+		euclidean: bool,
+		lightness_weight: f32,
+	) -> Result<()> {
+		let mut rng = rand::thread_rng();
+		let start_total = Instant::now();
+
+		// Generate random source palette (single row of colors × 1 pixel)
+		println!("Generating random source palette ({} colors)...", colors);
+		let mut source_pal_raw = vec![0u8; colors * 4];
+		for i in 0..colors {
+			let idx = i * 4;
+			source_pal_raw[idx] = rng.gen::<u8>();
+			source_pal_raw[idx + 1] = rng.gen::<u8>();
+			source_pal_raw[idx + 2] = rng.gen::<u8>();
+			source_pal_raw[idx + 3] = 255;
+		}
+		let source_pal = image::DynamicImage::ImageRgba8(
+			RgbaImage::from_raw(colors as u32, 1, source_pal_raw)
+				.ok_or_else(|| anyhow::anyhow!("Failed to create source palette"))?,
+		);
+
+		// Generate random target palette (single row of colors × 1 pixel)
+		println!("Generating random target palette ({} colors)...", colors);
+		let mut target_pal_raw = vec![0u8; colors * 4];
+		for i in 0..colors {
+			let idx = i * 4;
+			target_pal_raw[idx] = rng.gen::<u8>();
+			target_pal_raw[idx + 1] = rng.gen::<u8>();
+			target_pal_raw[idx + 2] = rng.gen::<u8>();
+			target_pal_raw[idx + 3] = 255;
+		}
+		let target_pal = image::DynamicImage::ImageRgba8(
+			RgbaImage::from_raw(colors as u32, 1, target_pal_raw)
+				.ok_or_else(|| anyhow::anyhow!("Failed to create target palette"))?,
+		);
+
+		// Generate random test input image
+		println!(
+			"Generating random test image ({}x{})...",
+			image_size, image_size
+		);
+		let pixel_count = (image_size * image_size) as usize;
+		let mut input_raw = vec![0u8; pixel_count * 4];
+		for i in 0..pixel_count {
+			let idx = i * 4;
+			input_raw[idx] = rng.gen::<u8>();
+			input_raw[idx + 1] = rng.gen::<u8>();
+			input_raw[idx + 2] = rng.gen::<u8>();
+			input_raw[idx + 3] = 255;
+		}
+		let input_image = image::DynamicImage::ImageRgba8(
+			RgbaImage::from_raw(image_size, image_size, input_raw)
+				.ok_or_else(|| anyhow::anyhow!("Failed to create input image"))?,
+		);
+
+		println!();
+		println!("=== Starting benchmark ===");
+		println!();
+
+		// Build source palette LUT
+		let start_lut = Instant::now();
+		println!("Building source palette LUT ({} colors)...", colors);
+		let source_lut = PaletteLUT::from_image(&source_pal, euclidean, lightness_weight);
+		let lut_time = start_lut.elapsed();
+		println!("LUT build time: {:.3}s", lut_time.as_secs_f64());
+		println!();
+
+		// Build target palette cache
+		let start_target = Instant::now();
+		println!("Building target palette cache...");
+		let target_palette = TargetPalette::from_image(&target_pal);
+		let target_time = start_target.elapsed();
+		println!("Target cache time: {:.3}s", target_time.as_secs_f64());
+		println!();
+
+		// Convert input to rgba8 and get raw buffer
+		let input_rgba = input_image.to_rgba8();
+		let (width, height) = input_rgba.dimensions();
+		let input_raw_buf = input_rgba.as_raw();
+
+		// Create raw output buffer
+		let pixel_count = (width * height) as usize;
+		let mut output_raw = vec![0u8; pixel_count * 4];
+
+		// Process each pixel
+		let start_process = Instant::now();
+		println!("Processing {}x{} pixels...", width, height);
+		for y in 0..height {
+			if y % 100 == 0 {
+				eprint!("\r  Line {}/{}...", y, height);
+			}
+
+			for x in 0..width {
+				let pixel_idx = (y * width + x) as usize;
+				let byte_idx = pixel_idx * 4;
+
+				let r = input_raw_buf[byte_idx];
+				let g = input_raw_buf[byte_idx + 1];
+				let b = input_raw_buf[byte_idx + 2];
+				let alpha = input_raw_buf[byte_idx + 3];
+
+				let palette_pos = source_lut.lookup(r, g, b);
+
+				let input_rgb = [r as f32 / 255.0, g as f32 / 255.0, b as f32 / 255.0];
+				let input_oklab = rgb_to_oklab(input_rgb);
+
+				let source_match = source_lut.source_oklab_by_position[palette_pos];
+
+				let delta = [
+					input_oklab[0] - source_match[0],
+					input_oklab[1] - source_match[1],
+					input_oklab[2] - source_match[2],
+				];
+
+				let target_base = target_palette.oklab_colors[palette_pos];
+
+				let mut output_oklab = [
+					target_base[0] + delta[0],
+					target_base[1] + delta[1],
+					target_base[2] + delta[2],
+				];
+
+				let mut scale = 1.0;
+				loop {
+					let test_linear_rgb = oklab_to_linear_rgb_unclamped(output_oklab);
+
+					let is_valid = test_linear_rgb[0] >= 0.0
+						&& test_linear_rgb[0] <= 1.0 && test_linear_rgb[1] >= 0.0
+						&& test_linear_rgb[1] <= 1.0 && test_linear_rgb[2] >= 0.0
+						&& test_linear_rgb[2] <= 1.0;
+
+					if is_valid || scale <= 0.1 {
+						break;
+					}
+
+					scale -= 0.1;
+					output_oklab = [
+						target_base[0] + delta[0] * scale,
+						target_base[1] + delta[1] * scale,
+						target_base[2] + delta[2] * scale,
+					];
+				}
+
+				let output_rgb = oklab_to_rgb(output_oklab);
+
+				output_raw[byte_idx] = (output_rgb[0] * 255.0).round() as u8;
+				output_raw[byte_idx + 1] = (output_rgb[1] * 255.0).round() as u8;
+				output_raw[byte_idx + 2] = (output_rgb[2] * 255.0).round() as u8;
+				output_raw[byte_idx + 3] = alpha;
+			}
+		}
+		let process_time = start_process.elapsed();
+		eprintln!("\r  Line {}/{}... Done!", height, height);
+		println!("Processing time: {:.3}s", process_time.as_secs_f64());
+		println!();
+
+		let total_time = start_total.elapsed();
+		let megapixels = (width * height) as f64 / 1_000_000.0;
+		let throughput = megapixels / process_time.as_secs_f64();
+
+		println!("=== Benchmark Results ===");
+		println!("LUT build time    : {:.3}s", lut_time.as_secs_f64());
+		println!("Target cache time : {:.3}s", target_time.as_secs_f64());
+		println!("Processing time   : {:.3}s", process_time.as_secs_f64());
+		println!("Total time        : {:.3}s", total_time.as_secs_f64());
+		println!("Image size        : {}x{} ({:.2} MP)", width, height, megapixels);
+		println!("Throughput        : {:.2} MP/s", throughput);
+		println!("Unique colors     : {}", source_lut.unique_colors.len());
 
 		Ok(())
 	}

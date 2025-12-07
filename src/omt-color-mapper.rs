@@ -59,6 +59,35 @@ enum Commands {
 		)]
 		lightness_weight: f32,
 	},
+	Benchmark {
+		#[arg(
+			long,
+			value_name = "COLORS",
+			help = "Number of unique colors in palettes",
+			default_value_t = 1024
+		)]
+		colors:          usize,
+		#[arg(
+			long,
+			value_name = "SIZE",
+			help = "Test image dimensions (SIZExSIZE)",
+			default_value_t = 1024
+		)]
+		image_size:      u32,
+		#[arg(
+			long,
+			help = "Use Euclidean distance instead of weighted distance",
+			default_value_t = false
+		)]
+		euclidean:       bool,
+		#[arg(
+			long,
+			value_name = "WEIGHT",
+			help = "Weight for lightness channel in distance calculation (ignored if --euclidean is set)",
+			default_value_t = 2.0
+		)]
+		lightness_weight: f32,
+	},
 }
 
 fn main() {
@@ -90,6 +119,29 @@ fn main() {
 			) {
 				Ok(_) => {
 					println!("Image processed successfully");
+					process::exit(0);
+				},
+				Err(e) => {
+					println!("Error: {:?}", e);
+					process::exit(-1);
+				},
+			}
+		},
+		Some(Commands::Benchmark {
+			colors,
+			image_size,
+			euclidean,
+			lightness_weight,
+		}) => {
+			println!("Running benchmark:");
+			println!("  colors          : {}", colors);
+			println!("  image_size      : {}x{}", image_size, image_size);
+			println!("  euclidean       : {}", euclidean);
+			println!("  lightness_weight: {}", lightness_weight);
+			println!();
+
+			match ColorMapper::benchmark(colors, image_size, euclidean, lightness_weight) {
+				Ok(_) => {
 					process::exit(0);
 				},
 				Err(e) => {
