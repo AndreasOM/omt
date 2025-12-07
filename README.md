@@ -42,3 +42,5 @@ Creates an AppIcon set from a single file. Mostly used to make development for A
 
 Takes an input image, a source and a target palette, and maps the colors.
 This tool is meant to be used for low color scenarios, e.g. games, it will work for palettes with a high number of entries (>10.000), but it will be slow.
+
+[Examples](docs/examples/OMT-COLOR-MAPPER.md)
