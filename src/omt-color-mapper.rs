@@ -23,28 +23,41 @@ enum Commands {
 			help = "Set the source palette image (.png)",
 			default_value = ""
 		)]
-		source_pal: PathBuf,
+		source_pal:      PathBuf,
 		#[arg(
 			long,
 			value_name = "TARGET_PAL",
 			help = "Set the target palette image (.png)",
 			default_value = ""
 		)]
-		target_pal: PathBuf,
+		target_pal:      PathBuf,
 		#[arg(
 			long,
 			value_name = "INPUT",
 			help = "Set the input image (.png)",
 			default_value = ""
 		)]
-		input:      PathBuf,
+		input:           PathBuf,
 		#[arg(
 			long,
 			value_name = "OUTPUT",
 			help = "Set the output image (.png)",
 			default_value = ""
 		)]
-		output:     PathBuf,
+		output:          PathBuf,
+		#[arg(
+			long,
+			help = "Use Euclidean distance instead of weighted distance",
+			default_value_t = false
+		)]
+		euclidean:       bool,
+		#[arg(
+			long,
+			value_name = "WEIGHT",
+			help = "Weight for lightness channel in distance calculation (ignored if --euclidean is set)",
+			default_value_t = 2.0
+		)]
+		lightness_weight: f32,
 	},
 }
 
@@ -57,13 +70,24 @@ fn main() {
 			target_pal,
 			input,
 			output,
+			euclidean,
+			lightness_weight,
 		}) => {
-			println!("source_pal: {:?}", source_pal);
-			println!("target_pal: {:?}", target_pal);
-			println!("input     : {:?}", input);
-			println!("output    : {:?}", output);
+			println!("source_pal      : {:?}", source_pal);
+			println!("target_pal      : {:?}", target_pal);
+			println!("input           : {:?}", input);
+			println!("output          : {:?}", output);
+			println!("euclidean       : {:?}", euclidean);
+			println!("lightness_weight: {:?}", lightness_weight);
 
-			match ColorMapper::process(&source_pal, &target_pal, &input, &output) {
+			match ColorMapper::process(
+				&source_pal,
+				&target_pal,
+				&input,
+				&output,
+				euclidean,
+				lightness_weight,
+			) {
 				Ok(_) => {
 					println!("Image processed successfully");
 					process::exit(0);

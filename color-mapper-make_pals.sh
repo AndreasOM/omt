@@ -31,7 +31,8 @@ cleanup() {
 trap cleanup EXIT INT TERM
 
 crush_png() {
-  [ -n "$OPTIPNG_BIN" ] && "$OPTIPNG_BIN" -o9 -quiet -- "$1"
+  # [ -n "$OPTIPNG_BIN" ] && "$OPTIPNG_BIN" -o9 -quiet -- "$1"
+  echo ""
 }
 
 # make_variant <name> <start-hex> <end-hex>
