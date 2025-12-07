@@ -36,6 +36,10 @@ name = "omt-asset"
 path = "src/omt-asset.rs"
 
 [[bin]]
+name = "omt-color-mapper"
+path = "src/omt-color-mapper.rs"
+
+[[bin]]
 name = "omt-font"
 path = "src/omt-font.rs"
 

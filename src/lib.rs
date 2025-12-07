@@ -1,5 +1,6 @@
 pub mod asset;
 pub mod atlas;
+pub mod color_mapper;
 pub mod font;
 pub mod gfx;
 pub mod packer;
