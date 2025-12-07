@@ -87,4 +87,5 @@ rgb = "0.8.46"
 shader-crusher = "0.5.0-alpha"
 anyhow = "1.0"
 symlink = "0.1.0"
+rand = "0.8"
 
